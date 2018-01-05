@@ -2,4 +2,5 @@
 title: "About Me"
 ---
 
-Why I am awesome. 
+- __Name:__ Ryan Travis
+- __Occupation:__ Statistician
