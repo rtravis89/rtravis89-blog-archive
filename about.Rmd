@@ -1,6 +1,0 @@
----
-title: "About Me"
----
-
-- __Name:__ Ryan Travis
-- __Occupation:__ Statistician
