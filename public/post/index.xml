@@ -6,10 +6,19 @@
     <description>Recent content in Posts on The Fledgling Statistician</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 06 Jan 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 18 Feb 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Covariate Adjustment for Binary Outcomes in Randomized Trials</title>
+      <link>/2018/02/18/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</link>
+      <pubDate>Sun, 18 Feb 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/2018/02/18/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</guid>
+      <description>IntroductionA common misconception about randomized clinical trials is that the randomization process should balance any particular covariate across the arms of the trial and that therefore there is no benefit to controlling for covariates with a regression model unless a particular covariate happens to be unbalanced by chance. Determining whether a covariate is considered unbalanced amounts to performing a significance test comparing the arms and checking to see if the p-value is below some threshold (.</description>
+    </item>
     
     <item>
       <title>Introduction</title>

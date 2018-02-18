@@ -35,8 +35,7 @@ N <- 10000
 Sigma <- matrix(c(10,3,3,2),2,2)
 unadj.df <- data.frame(matrix(rep(NA, N*4), ncol = 4))
 adj.df <- data.frame(matrix(rep(NA, N*4), ncol = 4))
-unadj.CI <- data.frame(matrix(rep(NA, N*2), ncol = 2))
-adj.CI <- data.frame(matrix(rep(NA, N*2), ncol = 2))
+
 
 for(i in 1:N){
 
@@ -55,11 +54,11 @@ for(i in 1:N){
   #Fit models
   unadj.mod <- glm(Y ~ TRT, family = binomial(link = "logit"), data = DAT)
   unadj.df[i,] <- summary(unadj.mod)$coefficients[2,]
-  unadj.CI[i,] <- confint(unadj.mod)[2,]
+
   
   adj.mod <- glm(Y ~ X1 + X2 + TRT, family = binomial(link = "logit"), data = DAT)
   adj.df[i,] <- summary(adj.mod)$coefficients[4,]
-  adj.CI[i,] <- confint(adj.mod)[4,]
+
 }
 
 names(unadj.df) <- c("Estimate", "SE", "Z", "P")
