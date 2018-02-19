@@ -1,0 +1,96 @@
+---
+title: Covariate Adjustment for Binary Outcomes in Randomized Trials
+author: Ryan Travis
+date: '2018-02-18'
+slug: covariate-adjustment-for-binary-outcomes-in-randomized-trials
+categories: []
+tags:
+  - rct
+  - regression
+---
+
+#Introduction
+
+A common misconception about randomized clinical trials is that the randomization process should balance any particular covariate across the arms of the trial and that therefore there is no benefit to controlling for covariates with a regression model unless a particular covariate happens to be unbalanced by chance. Determining whether a covariate is considered unbalanced amounts to performing a significance test comparing the arms and checking to see if the p-value is below some threshold (.05 for instance). This is wrong on two points. 
+
+Randomization does not ensure balance for any particular covariate. In fact it's essentially certain that some covariates, measured or unmeasured, will be unbalanced. And secondly, even if the arms are "balanced" for a particular covariate ,in the sense of there being no significant difference across the arms, there is still value in adjusting for the covariate. Specifically, the more strongly related the covariate is with the outcome, the more beneficial the adjustment regardless of whether there is a significant difference. The nature of the benefit differs depending on whether the outcome being studied is continuous or binary and the measure being used.  
+
+Adjusting for predictive covariates of a continous outcome will result in the estimate being more precise. That is, smaller standard errors and confidence intervals. However, both the adjusted and unadjusted estimates are unbiased. This is not true of binary outcomes measures such as odds ratios (or for that matter hazard ratios). The unadjusted estimates are biased small, whereas the adjusted estimate has less bias but larger standard errors. The reduction in the bias (effect size increase) offsets the increase in standard errors so that there is an increase in power. This is an interesting phenomena worth exploring.
+
+In this post I plan to perform some simple simulations demonstrating how estimates of a treatment effect can benefit from covariate adjustment of predictive yet "balanced" covariates for binary logistic regression models. This will also demonstrate the reduction in bias as well as increase in standard errors phenomena I mentioned above. 
+
+#The setup
+
+For the simulation I generated 1,000 pairs X1,X2 from a multivariate normal distribution with mean vector (0,0) and variance (10, 2), covariance (3). The variables are fairly correlated with $\rho$ approximately .675. Next, I generated 1,000 bernoulli random variables with $p = .5$. TRT = 1 represents whether the patient received the treatment variable and TRT = 0 means they received a placebo. The true data generating process is: $$logit(Y) = -2 + .15*X1 + 1.5*X2 - .5*TRT$$
+
+Thus, we see that the true effect of the treatment is -.5 on the log odds scale, or a .61 odds ratio. Unadjusted and Adjusted estimates of TRT were obtained from the 1,000 randomly generated observations. This entire process was repeated 10,000 times so that each model was fit 10,000 times and 10,000 separate estimates were obtained for each model.  
+
+```{r}
+library(MASS)
+library(ggplot2)
+
+set.seed(7521)
+
+N <- 10000
+Sigma <- matrix(c(10,3,3,2),2,2)
+unadj.df <- data.frame(matrix(rep(NA, N*4), ncol = 4))
+adj.df <- data.frame(matrix(rep(NA, N*4), ncol = 4))
+
+
+for(i in 1:N){
+
+  X <- mvrnorm(1000, mu = c(0,0), Sigma = Sigma)
+  #simulate random assignment to a treatment
+  TRT <- rbinom(1000, size = 1, pr = .5)
+  #Real relationship
+  lo <- -2 + .15 * X[,1] + 1.5 * X[,2] - .5*TRT
+  pr <- exp(lo) / (1 + exp(lo))
+  #Generate binary outcome
+  Y <- rbinom(1000, size = 1, pr = pr)
+  
+  DAT <- data.frame(Y,TRT, X)
+  
+  
+  #Fit models
+  unadj.mod <- glm(Y ~ TRT, family = binomial(link = "logit"), data = DAT)
+  unadj.df[i,] <- summary(unadj.mod)$coefficients[2,]
+
+  
+  adj.mod <- glm(Y ~ X1 + X2 + TRT, family = binomial(link = "logit"), data = DAT)
+  adj.df[i,] <- summary(adj.mod)$coefficients[4,]
+
+}
+
+names(unadj.df) <- c("Estimate", "SE", "Z", "P")
+names(adj.df) <- c("Estimate", "SE", "Z", "P")
+
+estimates <- data.frame(order = c(c(1:N),c(1:N)),
+                        estimate = c(unadj.df[,1],adj.df[,1]),
+                        SE = c(unadj.df[,2], adj.df[,2]),
+                        P = c(unadj.df[,4], adj.df[,4]),
+                        model = c(rep("unadjusted", N),rep("adjusted", N)))
+
+#Color code if interval contains true value
+estimates$contains <- with(estimates,
+                 ifelse((estimate - 2*SE) > -.5 | (estimate + 2*SE) < -.5,
+                        "No","Yes"))
+```
+
+#Results
+The results of the simulation are in line with what was stated above. The unadjusted estimate is biased low, has smaller standard errors, but also less power than the adjusted estimates. The proportion of adjusted confidence intervals (point estimate plus or minus 2 times the standard error) that contained the true treatment value of -.5 was a little over 95%. Whereas only 70% of the unadjusted confidence intervals contained the true value. About 69% of the the p-values for the adjusted estimate were below .05, but only 46% were for the unadjusted estimate. 
+
+The plot below displays the first 1000 simulations for each model. The black lines are the point estimate plus or minus two times the standard error. The lines that are red represent intervals that do not contain the true value, while black represents intervals that do contain the true value. 
+
+
+```{r cache.extra = estimates}
+ggplot(estimates[c(1:1000,10001:11000),], aes(x = estimate, y = order, color = contains)) + geom_point() +
+  geom_errorbarh(aes(xmin=estimate - 2*SE, xmax= estimate + 2*SE), height=0.2, size=.5) + 
+  geom_vline(xintercept = -.5, color = "purple") +
+  facet_wrap(  ~ model) +
+  scale_color_manual(values=c("red","black")) +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
+```
+
+So it seems that, at least for this simple data set up, the adjusted model is clearly superior. I don't know how these results hold up when the covariate adjusted model is mispecified, or when dealing with more complicated settings. These are topics I'd like to dig into in the future.

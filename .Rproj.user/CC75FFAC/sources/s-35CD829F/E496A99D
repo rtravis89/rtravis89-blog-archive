@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1519052698080.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1895835546",
+    "id" : "E496A99D",
+    "lastKnownWriteTime" : 1519053990,
+    "last_content_update" : 1519053990137,
+    "path" : "~/Site/rtravis89.github.io/config.toml",
+    "project_path" : "config.toml",
+    "properties" : {
+        "cursorPosition" : "8,11",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "toml"
+}

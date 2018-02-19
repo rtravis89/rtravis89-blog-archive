@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>The Fledgling Statistician</title>
+    <title>A Hugo website</title>
     <link>/</link>
-    <description>Recent content on The Fledgling Statistician</description>
+    <description>Recent content on A Hugo website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 18 Feb 2018 00:00:00 +0000</lastBuildDate>
@@ -13,10 +13,10 @@
     
     <item>
       <title>Covariate Adjustment for Binary Outcomes in Randomized Trials</title>
-      <link>/2018/02/18/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</link>
+      <link>/post/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</link>
       <pubDate>Sun, 18 Feb 2018 00:00:00 +0000</pubDate>
       
-      <guid>/2018/02/18/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</guid>
+      <guid>/post/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</guid>
       <description>IntroductionA common misconception about randomized clinical trials is that the randomization process should balance any particular covariate across the arms of the trial and that therefore there is no benefit to controlling for covariates with a regression model unless a particular covariate happens to be unbalanced by chance. Determining whether a covariate is considered unbalanced amounts to performing a significance test comparing the arms and checking to see if the p-value is below some threshold (.</description>
     </item>
     
@@ -26,15 +26,15 @@
       <pubDate>Sat, 06 Jan 2018 00:00:00 +0000</pubDate>
       
       <guid>/about/</guid>
-      <description> Author: Ryan Travis Occupation: Statistician Education: M.S. Statistics at Texas A&amp;amp;M, B.A. Philosophy at WVU, and B.A. Economics at WVU  </description>
+      <description> Author: Ryan Travis Occupation: Statistician   Education M.S. Statistics at Texas A&amp;M B.A. Philosophy at WVU B.A. Economics at WVU  </description>
     </item>
     
     <item>
       <title>Introduction</title>
-      <link>/2018/01/06/introduction/</link>
+      <link>/post/introduction/</link>
       <pubDate>Sat, 06 Jan 2018 00:00:00 +0000</pubDate>
       
-      <guid>/2018/01/06/introduction/</guid>
+      <guid>/post/introduction/</guid>
       <description>R Markdown</description>
     </item>
     
