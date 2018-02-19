@@ -15,3 +15,5 @@ theme = "hugo-lithium-theme"
 [[menu.main]]
     name = "Twitter"
     url = "https://twitter.com/fledglingstat"
+    
+ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
