@@ -79,11 +79,21 @@ estimates$contains <- with(estimates,
 #Results
 The results of the simulation are in line with what was stated above. The unadjusted estimate is biased low, has smaller standard errors, but also less power than the adjusted estimates. The proportion of adjusted confidence intervals (point estimate plus or minus 2 times the standard error) that contained the true treatment value of -.5 was a little over 95%. Whereas only 70% of the unadjusted confidence intervals contained the true value. About 69% of the the p-values for the adjusted estimate were below .05, but only 46% were for the unadjusted estimate. 
 
-The plot below displays the first 1000 simulations for each model. The black lines are the point estimate plus or minus two times the standard error. The lines that are red represent intervals that do not contain the true value, while black represents intervals that do contain the true value. 
+We can also inspect the the distribution of effect estimates for each model. The plots below show the distribution of effect estimates for all 10,000 simulations. Notice that the adjusted estimate is centered at the true value, whereas the unadjusted estimate is centered to the right (an underestimate).
+
+```{r cache.extra = estimates}
+ggplot(estimates, aes(estimate)) +
+  geom_density() +
+  geom_vline(xintercept = -.5, color = "purple") +
+  facet_wrap(~ model)
+```
+
+The plot below displays the first 1000 simulations for each model. The black lines are the point estimate plus or minus two times the standard error. The lines that are red represent intervals that do not contain the true value, while black represents intervals that do contain the true value. Notice that almost all of the red lines for the unadjusted model are to the right, indicating that the estimate is too small.
 
 
 ```{r cache.extra = estimates}
-ggplot(estimates[c(1:1000,10001:11000),], aes(x = estimate, y = order, color = contains)) + geom_point() +
+ggplot(estimates[c(1:1000,10001:11000),], aes(x = estimate, y = order, color = contains)) +
+  geom_point() +
   geom_errorbarh(aes(xmin=estimate - 2*SE, xmax= estimate + 2*SE), height=0.2, size=.5) + 
   geom_vline(xintercept = -.5, color = "purple") +
   facet_wrap(  ~ model) +
