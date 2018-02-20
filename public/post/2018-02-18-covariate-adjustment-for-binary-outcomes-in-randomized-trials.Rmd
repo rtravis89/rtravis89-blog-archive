@@ -35,30 +35,54 @@ N <- 10000
 Sigma <- matrix(c(10,3,3,2),2,2)
 unadj.df <- data.frame(matrix(rep(NA, N*4), ncol = 4))
 adj.df <- data.frame(matrix(rep(NA, N*4), ncol = 4))
-
+unadj.OR <- adj.OR <- OR <- rep(NA, N)
 
 for(i in 1:N){
-
+  
   X <- mvrnorm(1000, mu = c(0,0), Sigma = Sigma)
   #simulate random assignment to a treatment
   TRT <- rbinom(1000, size = 1, pr = .5)
-  #Real relationship
-  lo <- -2 + .15 * X[,1] + 1.5 * X[,2] - .5*TRT
-  pr <- exp(lo) / (1 + exp(lo))
-  #Generate binary outcome
-  Y <- rbinom(1000, size = 1, pr = pr)
+  #Probability of an event if everyone gets the treatment
+  trt.lo <- -2 + .15 * X[,1] + 1.5 * X[,2] - .5
+  trt.pr <- exp(trt.lo) / (1 + exp(trt.lo))
+  #Probability of an event if no one gets the treatment
+  pla.lo <- -2 + .15 * X[,1] + 1.5 * X[,2] 
+  pla.pr <- exp(pla.lo) / (1 + exp(pla.lo))
+  #Generate binary outcomes 
+  Y.trt <- rbinom(1000, size = 1, pr = trt.pr)
+  Y.pla <- rbinom(1000, size = 1, pr = pla.pr)
+  #Only observe actual assignment
+  Y <- ifelse(TRT == 1, Y.trt, Y.pla)
   
   DAT <- data.frame(Y,TRT, X)
   
+  #True OR
+  OR[i] <- (mean(Y.trt)/(1 - mean(Y.trt))) /
+             (mean(Y.pla)/(1 - mean(Y.pla)))
   
   #Fit models
   unadj.mod <- glm(Y ~ TRT, family = binomial(link = "logit"), data = DAT)
   unadj.df[i,] <- summary(unadj.mod)$coefficients[2,]
-
+  
   
   adj.mod <- glm(Y ~ X1 + X2 + TRT, family = binomial(link = "logit"), data = DAT)
   adj.df[i,] <- summary(adj.mod)$coefficients[4,]
-
+  
+  #Predict outcome with unadjusted model
+  newdata2 <- newdata <- DAT
+  newdata$TRT <- 1
+  newdata2$TRT <- 0
+  
+  unadj.pr.trt <- predict(unadj.mod, newdata = newdata, type = "response")
+  unadj.pr.pla <- predict(unadj.mod, newdata = newdata2, type = "response")
+  unadj.OR[i] <- (mean(unadj.pr.trt) / (1 - mean(unadj.pr.trt))) /
+                   (mean(unadj.pr.pla) / (1 - mean(unadj.pr.pla)))
+  
+  adj.pr.trt <- predict(adj.mod, newdata = newdata, type = "response")
+  adj.pr.pla <- predict(adj.mod, newdata = newdata2, type = "response")
+  adj.OR[i] <- (mean(adj.pr.trt) / (1 - mean(adj.pr.trt))) /
+                 (mean(adj.pr.pla) / (1 - mean(adj.pr.pla)))
+  
 }
 
 names(unadj.df) <- c("Estimate", "SE", "Z", "P")
@@ -72,8 +96,12 @@ estimates <- data.frame(order = c(c(1:N),c(1:N)),
 
 #Color code if interval contains true value
 estimates$contains <- with(estimates,
-                 ifelse((estimate - 2*SE) > -.5 | (estimate + 2*SE) < -.5,
-                        "No","Yes"))
+                           ifelse((estimate - 2*SE) > -.5 | (estimate + 2*SE) < -.5,
+                                  "No","Yes"))
+
+#OR difference
+ORD <- data.frame(ORD=c(OR - adj.OR, unadj.ORD = OR - unadj.OR),
+                  model = c(rep("Adj",N),rep("Unadj",N)))
 ```
 
 #Results
@@ -104,3 +132,25 @@ ggplot(estimates[c(1:1000,10001:11000),], aes(x = estimate, y = order, color = c
 ```
 
 So it seems that, at least for this simple data set up, the adjusted model is clearly superior. I don't know how these results hold up when the covariate adjusted model is mispecified, or when dealing with more complicated settings. These are topics I'd like to dig into in the future.
+
+#Additional Comments
+
+It was correctly pointed out that since the odds ratio is non-collapsible (the conditional effect doesn't necessarily equal the marginal effect), the unadjusted and adjusted estimates aren't really estimating the same thing. The unadjusted estimate is estimating the marginal, or "population averaged" effect, while the adjusted model is estimating the conditional effect. 
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Thank you <a href="https://twitter.com/analisereal?ref_src=twsrc%5Etfw">@analisereal</a> - I was wondering if this was just the diff b/w marginal and conditional. <a href="https://twitter.com/fledglingStat?ref_src=twsrc%5Etfw">@fledglingStat</a> I love the simln, but why not add the counterfactual outcomes so you can get the marginal effect. e.g., for each observation create the y(trt=0) and y(trt=1)?</p>&mdash; Maria Glymour (@MariaGlymour) <a href="https://twitter.com/MariaGlymour/status/965748110403096576?ref_src=twsrc%5Etfw">February 20, 2018</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+To explore what Dr. Glymour suggested, I added some code above that generates a separate "true" outcome for each patient, one under the treatment (Y.trt) and one under the control/placebo (Y.pla). Thus the true odds ratio is the ratio of the odds of these two values. The models are estimated using only the outcome value associated with the treatment assignment, since we only get to observe patients under one treatment regime (unless it's a crossover design). Once the models were estimated I computed a predicted probability of an event both on an off the treatment for each patient and a corresponding odds ratio for each model. These serve as my marginal estimates. As is expected, the marginalized estimate for the unadjusted model is equal to coefficient in the unadusted regression model.
+
+The plot below displays the distribution of differences between the true marginal odds ratio and the estimated marginal odds ratio for both models as well as a purple line at 0, representing no difference. I've also printed the mean difference for the unadjusted model followed by the adjusted model. From inspecting the plot it's clear that both estimates are essentially unbiased, but the adjusted estimate is more steeply peaked with smaller tails. Thus, the adjusted estimate is less likely than the unadjusted estimate to produce a poor estimate, e.g. it generally lies closer to the truth.
+
+```{r cache.extra = ORD}
+ggplot(ORD, aes(ORD)) +
+  geom_density() +
+  geom_vline(xintercept = 0, color = "purple") +
+  facet_wrap(~ model)
+
+round(with(ORD,mean(ORD[model == "Unadj"])),3)
+round(with(ORD,mean(ORD[model == "Adj"])),3)
+
+```
