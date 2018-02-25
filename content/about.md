@@ -4,6 +4,7 @@ date: "2018-01-06"
 ---
 
 * Author: Ryan Travis
+* Email: rtravis89@gmail.com
 * Occupation: Statistician
 
 <dl>

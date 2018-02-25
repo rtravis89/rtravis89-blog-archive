@@ -59,7 +59,7 @@
 
   <article class="article">
     
-    <span class="article-duration">5 min read</span>
+    <span class="article-duration">8 min read</span>
     
 
     <h1 class="article-title">Covariate Adjustment for Binary Outcomes in Randomized Trials</h1>
@@ -81,38 +81,62 @@
 <p>For the simulation I generated 1,000 pairs X1,X2 from a multivariate normal distribution with mean vector (0,0) and variance (10, 2), covariance (3). The variables are fairly correlated with <span class="math inline">\(\rho\)</span> approximately .675. Next, I generated 1,000 bernoulli random variables with <span class="math inline">\(p = .5\)</span>. TRT = 1 represents whether the patient received the treatment variable and TRT = 0 means they received a placebo. The true data generating process is: <span class="math display">\[logit(Y) = -2 + .15*X1 + 1.5*X2 - .5*TRT\]</span></p>
 <p>Thus, we see that the true effect of the treatment is -.5 on the log odds scale, or a .61 odds ratio. Unadjusted and Adjusted estimates of TRT were obtained from the 1,000 randomly generated observations. This entire process was repeated 10,000 times so that each model was fit 10,000 times and 10,000 separate estimates were obtained for each model.</p>
 <pre class="r"><code>library(MASS)
-library(ggplot2)
-
-set.seed(7521)
+library(ggplot2)</code></pre>
+<pre><code>## Warning: package &#39;ggplot2&#39; was built under R version 3.4.3</code></pre>
+<pre class="r"><code>set.seed(7521)
 
 N &lt;- 10000
 Sigma &lt;- matrix(c(10,3,3,2),2,2)
 unadj.df &lt;- data.frame(matrix(rep(NA, N*4), ncol = 4))
 adj.df &lt;- data.frame(matrix(rep(NA, N*4), ncol = 4))
-
+unadj.OR &lt;- adj.OR &lt;- OR &lt;- rep(NA, N)
 
 for(i in 1:N){
-
+  
   X &lt;- mvrnorm(1000, mu = c(0,0), Sigma = Sigma)
   #simulate random assignment to a treatment
   TRT &lt;- rbinom(1000, size = 1, pr = .5)
-  #Real relationship
-  lo &lt;- -2 + .15 * X[,1] + 1.5 * X[,2] - .5*TRT
-  pr &lt;- exp(lo) / (1 + exp(lo))
-  #Generate binary outcome
-  Y &lt;- rbinom(1000, size = 1, pr = pr)
+  #Probability of an event if everyone gets the treatment
+  trt.lo &lt;- -2 + .15 * X[,1] + 1.5 * X[,2] - .5
+  trt.pr &lt;- exp(trt.lo) / (1 + exp(trt.lo))
+  #Probability of an event if no one gets the treatment
+  pla.lo &lt;- -2 + .15 * X[,1] + 1.5 * X[,2] 
+  pla.pr &lt;- exp(pla.lo) / (1 + exp(pla.lo))
+  #Generate binary outcomes 
+  Y.trt &lt;- rbinom(1000, size = 1, pr = trt.pr)
+  Y.pla &lt;- rbinom(1000, size = 1, pr = pla.pr)
+  #Only observe actual assignment
+  Y &lt;- ifelse(TRT == 1, Y.trt, Y.pla)
   
   DAT &lt;- data.frame(Y,TRT, X)
   
+  #True OR
+  OR[i] &lt;- (mean(Y.trt)/(1 - mean(Y.trt))) /
+             (mean(Y.pla)/(1 - mean(Y.pla)))
   
   #Fit models
   unadj.mod &lt;- glm(Y ~ TRT, family = binomial(link = &quot;logit&quot;), data = DAT)
   unadj.df[i,] &lt;- summary(unadj.mod)$coefficients[2,]
-
+  
   
   adj.mod &lt;- glm(Y ~ X1 + X2 + TRT, family = binomial(link = &quot;logit&quot;), data = DAT)
   adj.df[i,] &lt;- summary(adj.mod)$coefficients[4,]
-
+  
+  #Predict outcome with unadjusted model
+  newdata2 &lt;- newdata &lt;- DAT
+  newdata$TRT &lt;- 1
+  newdata2$TRT &lt;- 0
+  
+  unadj.pr.trt &lt;- predict(unadj.mod, newdata = newdata, type = &quot;response&quot;)
+  unadj.pr.pla &lt;- predict(unadj.mod, newdata = newdata2, type = &quot;response&quot;)
+  unadj.OR[i] &lt;- (mean(unadj.pr.trt) / (1 - mean(unadj.pr.trt))) /
+                   (mean(unadj.pr.pla) / (1 - mean(unadj.pr.pla)))
+  
+  adj.pr.trt &lt;- predict(adj.mod, newdata = newdata, type = &quot;response&quot;)
+  adj.pr.pla &lt;- predict(adj.mod, newdata = newdata2, type = &quot;response&quot;)
+  adj.OR[i] &lt;- (mean(adj.pr.trt) / (1 - mean(adj.pr.trt))) /
+                 (mean(adj.pr.pla) / (1 - mean(adj.pr.pla)))
+  
 }
 
 names(unadj.df) &lt;- c(&quot;Estimate&quot;, &quot;SE&quot;, &quot;Z&quot;, &quot;P&quot;)
@@ -126,14 +150,25 @@ estimates &lt;- data.frame(order = c(c(1:N),c(1:N)),
 
 #Color code if interval contains true value
 estimates$contains &lt;- with(estimates,
-                 ifelse((estimate - 2*SE) &gt; -.5 | (estimate + 2*SE) &lt; -.5,
-                        &quot;No&quot;,&quot;Yes&quot;))</code></pre>
+                           ifelse((estimate - 2*SE) &gt; -.5 | (estimate + 2*SE) &lt; -.5,
+                                  &quot;No&quot;,&quot;Yes&quot;))
+
+#OR difference
+ORD &lt;- data.frame(ORD=c(OR - adj.OR, unadj.ORD = OR - unadj.OR),
+                  model = c(rep(&quot;Adj&quot;,N),rep(&quot;Unadj&quot;,N)))</code></pre>
 </div>
 <div id="results" class="section level1">
 <h1>Results</h1>
 <p>The results of the simulation are in line with what was stated above. The unadjusted estimate is biased low, has smaller standard errors, but also less power than the adjusted estimates. The proportion of adjusted confidence intervals (point estimate plus or minus 2 times the standard error) that contained the true treatment value of -.5 was a little over 95%. Whereas only 70% of the unadjusted confidence intervals contained the true value. About 69% of the the p-values for the adjusted estimate were below .05, but only 46% were for the unadjusted estimate.</p>
-<p>The plot below displays the first 1000 simulations for each model. The black lines are the point estimate plus or minus two times the standard error. The lines that are red represent intervals that do not contain the true value, while black represents intervals that do contain the true value.</p>
-<pre class="r"><code>ggplot(estimates[c(1:1000,10001:11000),], aes(x = estimate, y = order, color = contains)) + geom_point() +
+<p>We can also inspect the the distribution of effect estimates for each model. The plots below show the distribution of effect estimates for all 10,000 simulations. Notice that the adjusted estimate is centered at the true value, whereas the unadjusted estimate is centered to the right (an underestimate).</p>
+<pre class="r"><code>ggplot(estimates, aes(estimate)) +
+  geom_density() +
+  geom_vline(xintercept = -.5, color = &quot;purple&quot;) +
+  facet_wrap(~ model)</code></pre>
+<p><img src="/post/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>The plot below displays the first 1000 simulations for each model. The black lines are the point estimate plus or minus two times the standard error. The lines that are red represent intervals that do not contain the true value, while black represents intervals that do contain the true value. Notice that almost all of the red lines for the unadjusted model are to the right, indicating that the estimate is too small.</p>
+<pre class="r"><code>ggplot(estimates[c(1:1000,10001:11000),], aes(x = estimate, y = order, color = contains)) +
+  geom_point() +
   geom_errorbarh(aes(xmin=estimate - 2*SE, xmax= estimate + 2*SE), height=0.2, size=.5) + 
   geom_vline(xintercept = -.5, color = &quot;purple&quot;) +
   facet_wrap(  ~ model) +
@@ -141,8 +176,30 @@ estimates$contains &lt;- with(estimates,
   theme(axis.title.y=element_blank(),
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank())</code></pre>
-<p><img src="/post/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="/post/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>So it seems that, at least for this simple data set up, the adjusted model is clearly superior. I don’t know how these results hold up when the covariate adjusted model is mispecified, or when dealing with more complicated settings. These are topics I’d like to dig into in the future.</p>
+</div>
+<div id="additional-comments" class="section level1">
+<h1>Additional Comments</h1>
+<p>It was correctly pointed out that since the odds ratio is non-collapsible (the conditional effect doesn’t necessarily equal the marginal effect), the unadjusted and adjusted estimates aren’t really estimating the same thing. The unadjusted estimate is estimating the marginal, or “population averaged” effect, while the adjusted model is estimating the conditional effect.</p>
+<blockquote class="twitter-tweet" data-lang="en">
+<p lang="en" dir="ltr">
+Thank you <a href="https://twitter.com/analisereal?ref_src=twsrc%5Etfw"><span class="citation">@analisereal</span></a> - I was wondering if this was just the diff b/w marginal and conditional. <a href="https://twitter.com/fledglingStat?ref_src=twsrc%5Etfw"><span class="citation">@fledglingStat</span></a> I love the simln, but why not add the counterfactual outcomes so you can get the marginal effect. e.g., for each observation create the y(trt=0) and y(trt=1)?
+</p>
+— Maria Glymour (<span class="citation">@MariaGlymour</span>) <a href="https://twitter.com/MariaGlymour/status/965748110403096576?ref_src=twsrc%5Etfw">February 20, 2018</a>
+</blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>To explore what Dr. Glymour suggested, I added some code above that generates a separate “true” outcome for each patient, one under the treatment (Y.trt) and one under the control/placebo (Y.pla). Thus the true odds ratio is the ratio of the odds of these two values. The models are estimated using only the outcome value associated with the treatment assignment, since we only get to observe patients under one treatment regime (unless it’s a crossover design). Once the models were estimated I computed a predicted probability of an event both on an off the treatment for each patient and a corresponding odds ratio for each model. These serve as my marginal estimates. As is expected, the marginalized estimate for the unadjusted model is equal to coefficient in the unadusted regression model.</p>
+<p>The plot below displays the distribution of differences between the true marginal odds ratio and the estimated marginal odds ratio for both models as well as a purple line at 0, representing no difference. I’ve also printed the mean difference for the unadjusted model followed by the adjusted model. From inspecting the plot it’s clear that both estimates are essentially unbiased, but the adjusted estimate is more steeply peaked with smaller tails. Thus, the adjusted estimate is less likely than the unadjusted estimate to produce a poor estimate, e.g. it generally lies closer to the truth.</p>
+<pre class="r"><code>ggplot(ORD, aes(ORD)) +
+  geom_density() +
+  geom_vline(xintercept = 0, color = &quot;purple&quot;) +
+  facet_wrap(~ model)</code></pre>
+<p><img src="/post/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre class="r"><code>round(with(ORD,mean(ORD[model == &quot;Unadj&quot;])),3)</code></pre>
+<pre><code>## [1] -0.006</code></pre>
+<pre class="r"><code>round(with(ORD,mean(ORD[model == &quot;Adj&quot;])),3)</code></pre>
+<pre><code>## [1] -0.001</code></pre>
 </div>
 
     </div>
