@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Regression on A Hugo website</title>
-    <link>/tags/regression/</link>
-    <description>Recent content in Regression on A Hugo website</description>
+    <title>Machine Learning on A Hugo website</title>
+    <link>/tags/machine-learning/</link>
+    <description>Recent content in Machine Learning on A Hugo website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 25 Feb 2018 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="/tags/regression/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="/tags/machine-learning/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -18,15 +18,6 @@
       
       <guid>/post/super-learning-from-scratch/</guid>
       <description>IntroductionSuper Learning is a conceptually simple way of combining predictions from different models using cross validation. It simply uses the cross-validated results to form an optimal weighted combination of predictions. Combining predictions across models, typically refered to as stacking or stacked ensembles, is not new. I’ve seen references as far back as about 30 years, though I wouldn’t be surprised if it was much older. However, as far as I know, it was only relatively recently (within 15 years) that some nice theoretical properties were proven for a particular type of stacking called super learning.</description>
-    </item>
-    
-    <item>
-      <title>Covariate Adjustment for Binary Outcomes in Randomized Trials</title>
-      <link>/post/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</link>
-      <pubDate>Sun, 18 Feb 2018 00:00:00 +0000</pubDate>
-      
-      <guid>/post/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</guid>
-      <description>IntroductionA common misconception about randomized clinical trials is that the randomization process should balance any particular covariate across the arms of the trial and that therefore there is no benefit to controlling for covariates with a regression model unless a particular covariate happens to be unbalanced by chance. Determining whether a covariate is considered unbalanced amounts to performing a significance test comparing the arms and checking to see if the p-value is below some threshold (.</description>
     </item>
     
   </channel>

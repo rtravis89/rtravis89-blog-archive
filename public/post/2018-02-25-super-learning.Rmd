@@ -1,8 +1,12 @@
 ---
-title: "Super Learning from scratch"
-author: "Ryan Travis"
-date: "February 25, 2018"
-output: html_document
+title: Super Learning from Scratch
+author: Ryan Travis
+date: '2018-02-25'
+slug: super-learning-from-scratch
+categories: []
+tags:
+  - machine-learning
+  - regression
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning = FALSE}
