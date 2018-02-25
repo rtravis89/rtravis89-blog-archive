@@ -15,5 +15,8 @@ theme = "hugo-lithium-theme"
 [[menu.main]]
     name = "Twitter"
     url = "https://twitter.com/fledglingstat"
+[[menu.main]]
+   name = "LinkedIn"
+   url = "https://www.linkedin.com/in/rtravis89"
     
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
