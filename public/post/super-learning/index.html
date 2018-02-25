@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.32.2" />
+
+
+<title>Super Learning from scratch - A Hugo website</title>
+<meta property="og:title" content="Super Learning from scratch - A Hugo website">
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/%3cnil%3e"
+         width=""
+         height=""
+         alt="">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rtravis89">GitHub</a></li>
+    
+    <li><a href="/post">Posts</a></li>
+    
+    <li><a href="https://twitter.com/fledglingstat">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">9 min read</span>
+    
+
+    <h1 class="article-title">Super Learning from scratch</h1>
+
+    
+    <span class="article-date">0001/01/01</span>
+    
+
+    <div class="article-content">
+      <div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Super Learning is a conceptually simple way of combining predictions from different models using cross validation. It simply uses the cross-validated results to form an optimal weighted combination of predictions. Combining predictions across models, typically refered to as stacking or stacked ensembles, is not new. I’ve seen references as far back as about 30 years, though I wouldn’t be surprised if it was much older. However, as far as I know, it was only relatively recently (within 15 years) that some nice theoretical properties were proven for a particular type of stacking called super learning. The paper by Mark van der Laan establishing the results for the super learner can be found here <a href="http://biostats.bepress.com/ucbbiostat/paper222/">Super Learner by Mark van der Laan</a>.</p>
+<p>I learned about super learning by attending a short course at Harvard school of public health led by Dr. Sherri Rose and Dr. Laura Hatfield. Dr. Rose gave a very nice presentation on the super learner and a few examples using it from her own research. The thing that really stood out to me about this method was its unification of the prediction model building process. There is no longer a need to pick a single model as best. This can be particularly difficult if several models perform similarly. The super learner will typically perform as good as the single best performing model and often better. Below I work through building a super learner from scratch.</p>
+<p>A few resources I found very helpful for this are <a href="https://www.biorxiv.org/content/early/2017/08/18/172395">Stacked Generalizations by Ashley Naimi and Laura Balzer</a>, the <a href="https://github.com/ainaimi/SuperLearnerIntro">github for the paper</a>, and the <a href="https://github.com/ecpolley/SuperLearner">github for the SuperLearner package in R</a>. Good chunks of the code below are taken and slightly edited from the Naimi and Balzer github. Additionally, datacamp published a nice article a few days ago walking through the SuperLearner package <a href="https://www.datacamp.com/community/tutorials/ensemble-r-machine-learning">datacamp</a>. datacamp is a great and cost effective way of learning about programming, statistics, and machine learning. I’ve used it in the past and recommend it, especially for beginners.</p>
+</div>
+<div id="super-learning-from-scratch" class="section level1">
+<h1>Super Learning from Scratch</h1>
+<div id="the-data" class="section level2">
+<h2>The data</h2>
+<p>I generated 10,000 rows and 5 variables of fake data for this example using a multivariate normal. I then added a 6th variable by squaring the first variable and a 7th variable as the interaction between the 2nd and 3rd. I then randomly generated coefficients between -.5 and .5. The outcome will be binary, and thus a bernoulli random variable. The probability of an event will be the inverse logit of the linear combination of randomly generated coefficients and my fake data. Even though the logit scale (log odds) runs from negative infinity to infinity, essentially anything above or below 6 and negative 6 are very close to 1 and 0 on the probability scale. This will cause problems when I optimize the loss functions below, so I’ve tried to restrict the data generation to non-extreme values. You can see that in the histogram of log odds below.</p>
+<pre class="r"><code>library(rms)</code></pre>
+<pre><code>## Loading required package: Hmisc</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>## Loading required package: survival</code></pre>
+<pre><code>## Loading required package: Formula</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre><code>## 
+## Attaching package: &#39;Hmisc&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     format.pval, units</code></pre>
+<pre><code>## Loading required package: SparseM</code></pre>
+<pre><code>## 
+## Attaching package: &#39;SparseM&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:base&#39;:
+## 
+##     backsolve</code></pre>
+<pre class="r"><code>library(mvtnorm)
+library(Matrix)
+library(SuperLearner)</code></pre>
+<pre><code>## Loading required package: nnls</code></pre>
+<pre><code>## Super Learner</code></pre>
+<pre><code>## Version: 2.0-22</code></pre>
+<pre><code>## Package created on 2017-07-18</code></pre>
+<pre class="r"><code>#Randomly generate data
+set.seed(1256)
+
+N = 10000
+NVAR &lt;- 5
+#Covariance Matrix
+sigma &lt;- matrix(runif(NVAR^2,0,1), ncol=NVAR)
+sigma &lt;- forceSymmetric(sigma)
+sigma &lt;- as.matrix(nearPD(sigma)$mat)
+
+#Mean vector: 
+mu &lt;- round(runif(NVAR,-1,.1),2)
+print(mu)</code></pre>
+<pre><code>## [1] -0.46 -0.47 -0.27 -0.94 -0.75</code></pre>
+<pre class="r"><code>#Generate data
+X &lt;- rmvnorm(N, mean=mu, sigma=sigma)
+X &lt;- cbind(X,X[,1]^2)
+X &lt;- cbind(X,X[,2]*X[,3])
+
+
+coefs &lt;- round(runif(NVAR+2, -.5, .5),2)
+#Outcome
+lo &lt;- X %*% coefs
+hist(lo)</code></pre>
+<p><img src="/post/super-learning_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<pre class="r"><code>#Extreme probabilities will make optimization more difficult
+pr &lt;- exp(lo)/(1 + exp(lo))
+
+Y &lt;- rbinom(N, size = 1,pr = pr)</code></pre>
+</div>
+</div>
+<div id="exploring-the-data" class="section level1">
+<h1>Exploring the data</h1>
+<p>I generated a summary table of the 7 predictor variables as well as a pairs plot. Additionally, I plotted the probability of an event as a function of each predictor variable. The plots show some nice looking relationships, but this is fake data so we won’t dwell on it much. However, it’s always good to exploratory analysis before fitting your models.</p>
+<pre class="r"><code>#Exploratory plots
+summary(X)</code></pre>
+<pre><code>##        V1                  V2                V3                V4         
+##  Min.   :-3.094573   Min.   :-4.2007   Min.   :-3.9632   Min.   :-4.0099  
+##  1st Qu.:-0.903185   1st Qu.:-1.1385   1st Qu.:-0.9596   1st Qu.:-1.4806  
+##  Median :-0.460482   Median :-0.4630   Median :-0.2677   Median :-0.9303  
+##  Mean   :-0.457468   Mean   :-0.4705   Mean   :-0.2581   Mean   :-0.9285  
+##  3rd Qu.:-0.004579   3rd Qu.: 0.1893   3rd Qu.: 0.4380   3rd Qu.:-0.3772  
+##  Max.   : 2.393029   Max.   : 3.1435   Max.   : 3.2037   Max.   : 1.9370  
+##        V5                V6                V7          
+##  Min.   :-4.5139   Min.   :0.00000   Min.   :-3.31823  
+##  1st Qu.:-1.3520   1st Qu.:0.07253   1st Qu.:-0.03143  
+##  Median :-0.7373   Median :0.32206   Median : 0.24488  
+##  Mean   :-0.7367   Mean   :0.66349   Mean   : 0.68102  
+##  3rd Qu.:-0.1089   3rd Qu.:0.90247   3rd Qu.: 1.03135  
+##  Max.   : 2.9404   Max.   :9.57638   Max.   :13.27604</code></pre>
+<pre class="r"><code>pairs(X)</code></pre>
+<p><img src="/post/super-learning_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code>par(mfrow = c(3,3))
+invisible(lapply(1:ncol(X), function(i) plot(X[,i],pr)))</code></pre>
+<p><img src="/post/super-learning_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+</div>
+<div id="fitting-the-super-learner-using-the-superlearner-package" class="section level1">
+<h1>Fitting the super learner using the SuperLearner package</h1>
+<p>The super learner function syntax is fairly straight forward and similar to fitting any other model. The biggest difference is the SL.library, the list of candidate algorithms for the super learner to build. The package comes with build in wrapper functions (all the models with SL. in from of the name) for a fairly wide variety of models. If you want to use other models, or specify particular tuning parameters, you’ll need to write your own wrapper functions. The datacamp tutorial helpfully covers that.</p>
+<p>The candidate models I’m going to use are a main effects glm, linear discriminate analysis (lda), quadratic discriminate analysis (qda), and a random forest (using the ranger package). I fit the super learner twice, each with a separate loss function. The first is rank loss (AUC), while the second is the negative log likelihood. I’m just going to store the results and compare them to what I derive manually. The results we get should be very similar to what the function produces.</p>
+<pre class="r"><code>#Super Learner
+
+DAT &lt;- data.frame(X)
+
+SL.library &lt;- c(&quot;SL.glm&quot;,
+                &quot;SL.lda&quot;,
+                &quot;SL.qda&quot;,
+                &quot;SL.ranger&quot;)
+
+
+
+system.time({
+  sl.AUC = SuperLearner(Y = Y, X = DAT,
+                    family = binomial(),
+                    method = &quot;method.AUC&quot;,
+                    SL.library = SL.library)
+})</code></pre>
+<pre><code>## Loading required package: cvAUC</code></pre>
+<pre><code>## Loading required package: ROCR</code></pre>
+<pre><code>## Loading required package: gplots</code></pre>
+<pre><code>## 
+## Attaching package: &#39;gplots&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:stats&#39;:
+## 
+##     lowess</code></pre>
+<pre><code>## Loading required package: data.table</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## cvAUC version: 1.1.0</code></pre>
+<pre><code>## Notice to cvAUC users: Major speed improvements in version 1.1.0</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## Loading required package: MASS</code></pre>
+<pre><code>## Loading required package: ranger</code></pre>
+<pre><code>##    user  system elapsed 
+##  124.01    1.42  121.29</code></pre>
+<pre class="r"><code>system.time({
+  sl.LL = SuperLearner(Y = Y, X = DAT,
+                    family = binomial(),
+                    method = &quot;method.NNloglik&quot;,
+                    SL.library = SL.library)
+})</code></pre>
+<pre><code>##    user  system elapsed 
+##  122.49    1.22  119.91</code></pre>
+</div>
+<div id="manually-building-the-super-learner" class="section level1">
+<h1>Manually building the super learner</h1>
+<p>The super learner is a weighted combination of the cross validated predictions of the candidate models. In the code below I perform 20 fold cross validation for the glm, lda, qda, and random forest models and store the results. I then combine these with the observed outcomes (vector of 1s and 0s) into a 10,000 by 5 matrix. In order to derive the super learner weights, you simply need to optimize your selected loss function. That is, use the optim function in R to find the coefficients that minimize or maximize the loss/objective function. I compute the weights for two loss functions: the rank loss (AUC) and negative log likelihood. I prefer the latter because it’s a proper scoring rule (won’t tell you a worse model is better). The weights are standardized so that they sum to one.</p>
+<pre class="r"><code>DATA &lt;- data.frame(Y = Y, DAT)
+
+
+#Create folds
+folds &lt;- 20
+splt &lt;- split(DATA,1:folds)
+
+
+#Fit models
+glm.mods &lt;- lapply(1:folds, function(ii) glm(formula = Y ~ ., data = do.call(rbind, splt[-ii]), family=&quot;binomial&quot;))
+lda.mods &lt;- lapply(1:folds, function(ii) lda(formula = Y ~ ., data = do.call(rbind, splt[-ii])))
+qda.mods &lt;- lapply(1:folds, function(ii) qda(formula = Y ~ ., data = do.call(rbind, splt[-ii])))
+rf.mods &lt;- lapply(1:folds, function(ii) ranger(formula = Y ~ ., data = do.call(rbind, splt[-ii])))
+
+#Compute model Predictions
+
+p.glm &lt;- lapply(1:folds,function(ii) predict(glm.mods[[ii]], newdata = rbindlist(splt[ii]), type = &quot;response&quot;))
+p.lda &lt;- lapply(1:folds,function(ii) predict(lda.mods[[ii]], newdata = rbindlist(splt[ii]), type = &quot;response&quot;))
+p.qda &lt;- lapply(1:folds,function(ii) predict(qda.mods[[ii]], newdata = rbindlist(splt[ii]), type = &quot;response&quot;))
+p.rf &lt;- lapply(1:folds,function(ii) predict(rf.mods[[ii]], data = rbindlist(splt[ii]), type = &quot;response&quot;))
+
+
+#Combine outcomes with prediction probabilities
+Y.preds &lt;- NULL
+for(i in 1:folds){
+  Y.preds[[i]]&lt;-cbind(splt[[i]][,1],p.glm[[i]],p.lda[[i]]$posterior[,2],p.qda[[i]]$posterior[,2], p.rf[[i]]$predictions)
+}
+
+
+#Manually compute SL coefficients
+
+cv.X &lt;- data.frame(do.call(rbind,Y.preds),row.names=NULL); names(X)&lt;-c(&quot;Y&quot;,&quot;GLM&quot;,&quot;LDA&quot;,&quot;QDA&quot;,&quot;RF&quot;)
+
+bounds = c(0, Inf)
+
+AUCF&lt;-function(A, y, par){
+  AUCC &lt;- function(A,y,par) {
+  A&lt;-as.matrix(A)
+  names(par)&lt;-c(&quot;GLM&quot;,&quot;LDA&quot;,&quot;QDA&quot;,&quot;RF&quot;)
+  predictions &lt;- crossprod(t(A),par)
+  1 - AUC(predictions = predictions, labels = y)
+  }
+  bounds = c(0, Inf)
+  fit &lt;- optim(par= par, fn=AUCC, A=A, y=y,
+               method=&quot;L-BFGS-B&quot;,lower=bounds[1],upper=bounds[2])
+  fit$par/sum(fit$par)
+  
+}
+
+##Binomial negative log likelihood
+NNloglik &lt;- function(A, y, par) {
+  A &lt;- as.matrix(trimLogit(A, trim = 0.001))
+  names(par) &lt;- c(&quot;GLM&quot;,&quot;LDA&quot;,&quot;QDA&quot;,&quot;RF&quot;)
+  fmin &lt;- function(par, A, y) {
+    p &lt;- plogis(crossprod(t(A), par))
+   -sum(2 * ifelse(y, log(p), log(1-p)))
+  }
+  gmin &lt;- function(par, A, y) {
+    names(par) &lt;- c(&quot;GLM&quot;,&quot;LDA&quot;,&quot;QDA&quot;,&quot;RF&quot;)
+    eta &lt;- A %*% par
+    p &lt;- plogis(eta)
+    -2 * t(dlogis(eta) * ifelse(y, 1/p, -1/(1-p))) %*% A
+  }
+  fit2 &lt;- optim(par, fn = fmin, gr = gmin, A = A, y = y, method = &quot;L-BFGS-B&quot;, lower = 0)
+  fit2$par[fit2$par &lt; 0] &lt;- 0
+  fit2$par[is.na(fit2$par)] &lt;- 0
+  print(fit2)
+  print(fit2$par/sum(abs(fit2$par)))
+}  </code></pre>
+</div>
+<div id="comparing-manual-weights-with-superlearner-function-weights" class="section level1">
+<h1>Comparing manual weights with SuperLearner function weights</h1>
+<p>We can see that there are slight differences between the manual super learner weights and the weights from the function, but that they are overall fairly close.</p>
+<pre class="r"><code>#AUC Results
+sl.AUC</code></pre>
+<pre><code>## 
+## Call:  
+## SuperLearner(Y = Y, X = DAT, family = binomial(), SL.library = SL.library,  
+##     method = &quot;method.AUC&quot;) 
+## 
+## 
+##                    Risk      Coef
+## SL.glm_All    0.2744989 0.5793794
+## SL.lda_All    0.2747840 0.4206206
+## SL.qda_All    0.2830790 0.0000000
+## SL.ranger_All 0.3226014 0.0000000</code></pre>
+<pre class="r"><code>AUCF(cv.X[,2:5], cv.X[,1], par = c(1/4,1/4,1/4,1/4))</code></pre>
+<pre><code>## [1] 0.6077965 0.3922035 0.0000000 0.0000000</code></pre>
+<pre class="r"><code>##Log likelihood Results
+sl.LL  </code></pre>
+<pre><code>## 
+## Call:  
+## SuperLearner(Y = Y, X = DAT, family = binomial(), SL.library = SL.library,  
+##     method = &quot;method.NNloglik&quot;) 
+## 
+## 
+##                    Risk        Coef
+## SL.glm_All    0.5876302 0.997260486
+## SL.lda_All    0.5906470 0.000000000
+## SL.qda_All    0.8026571 0.002739514
+## SL.ranger_All       Inf 0.000000000</code></pre>
+<pre class="r"><code>NNloglik(par = c(1/4,1/4,1/4,1/4), A = cv.X[,2:5], y = cv.X[,1])</code></pre>
+<pre><code>## $par
+##         GLM         LDA         QDA          RF 
+## 0.986311782 0.000000000 0.003474458 0.000000000 
+## 
+## $value
+## [1] 11751.64
+## 
+## $counts
+## function gradient 
+##       21       21 
+## 
+## $convergence
+## [1] 0
+## 
+## $message
+## [1] &quot;CONVERGENCE: REL_REDUCTION_OF_F &lt;= FACTR*EPSMCH&quot;
+## 
+##         GLM         LDA         QDA          RF 
+## 0.996489689 0.000000000 0.003510311 0.000000000</code></pre>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdn.bootcss.com/highlight.js//highlight.min.js"></script>
+
+
+
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+

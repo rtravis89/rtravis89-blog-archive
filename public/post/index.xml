@@ -29,5 +29,23 @@
       <description>R Markdown</description>
     </item>
     
+    <item>
+      <title></title>
+      <link>/post/super_learning/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/post/super_learning/</guid>
+      <description>Super Learning from scratchcode{white-space: pre;}pre:not([class]) {background-color: white;}if (window.hljs) {hljs.configure({languages: []});hljs.initHighlightingOnLoad();if (document.readyState &amp;&amp; document.readyState === &#34;complete&#34;) {window.setTimeout(function() { hljs.initHighlighting(); }, 0);}}h1 {font-size: 34px;}h1.title {font-size: 38px;}h2 {font-size: 30px;}h3 {font-size: 24px;}h4 {font-size: 18px;}h5 {font-size: 16px;}h6 {font-size: 12px;}.</description>
+    </item>
+    
+    <item>
+      <title>Super Learning from scratch</title>
+      <link>/post/super-learning/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/post/super-learning/</guid>
+      <description>IntroductionSuper Learning is a conceptually simple way of combining predictions from different models using cross validation. It simply uses the cross-validated results to form an optimal weighted combination of predictions. Combining predictions across models, typically refered to as stacking or stacked ensembles, is not new. I’ve seen references as far back as about 30 years, though I wouldn’t be surprised if it was much older. However, as far as I know, it was only relatively recently (within 15 years) that some nice theoretical properties were proven for a particular type of stacking called super learning.</description>
+    </item>
+    
   </channel>
 </rss>
