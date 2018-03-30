@@ -86,7 +86,7 @@ The candidate models I'm going to use are a main effects glm, linear discriminat
 ```{r}
 #Super Learner
 
-DAT <- data.frame(X)
+DAT <- data.frame(X[,1:5])
 
 SL.library <- c("SL.glm",
                 "SL.lda",

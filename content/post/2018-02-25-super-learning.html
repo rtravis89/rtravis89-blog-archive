@@ -108,7 +108,7 @@ invisible(lapply(1:ncol(X), function(i) plot(X[,i],pr)))</code></pre>
 <p>The candidate models I’m going to use are a main effects glm, linear discriminate analysis (lda), quadratic discriminate analysis (qda), and a random forest (using the ranger package). I fit the super learner twice, each with a separate loss function. The first is rank loss (AUC), while the second is the negative log likelihood. I’m just going to store the results and compare them to what I derive manually. The results we get should be very similar to what the function produces.</p>
 <pre class="r"><code>#Super Learner
 
-DAT &lt;- data.frame(X)
+DAT &lt;- data.frame(X[,1:5])
 
 SL.library &lt;- c(&quot;SL.glm&quot;,
                 &quot;SL.lda&quot;,
@@ -139,7 +139,7 @@ system.time({
 <pre><code>## Loading required package: MASS</code></pre>
 <pre><code>## Loading required package: ranger</code></pre>
 <pre><code>##    user  system elapsed 
-##  126.07    1.83  123.61</code></pre>
+##  136.70    1.97  135.03</code></pre>
 <pre class="r"><code>system.time({
   sl.LL = SuperLearner(Y = Y, X = DAT,
                     family = binomial(),
@@ -147,7 +147,7 @@ system.time({
                     SL.library = SL.library)
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##  120.79    1.19  117.87</code></pre>
+##  132.44    1.45  130.37</code></pre>
 </div>
 <div id="manually-building-the-super-learner" class="section level1">
 <h1>Manually building the super learner</h1>
@@ -234,12 +234,12 @@ sl.AUC</code></pre>
 ## 
 ## 
 ##                    Risk      Coef
-## SL.glm_All    0.2744989 0.5793794
-## SL.lda_All    0.2747840 0.4206206
-## SL.qda_All    0.2830790 0.0000000
-## SL.ranger_All 0.3226014 0.0000000</code></pre>
+## SL.glm_All    0.2750461 0.3337970
+## SL.lda_All    0.2750400 0.3357307
+## SL.qda_All    0.2753354 0.3304723
+## SL.ranger_All 0.3241119 0.0000000</code></pre>
 <pre class="r"><code>AUCF(cv.X[,2:5], cv.X[,1], par = c(1/4,1/4,1/4,1/4))</code></pre>
-<pre><code>## [1] 0.6077965 0.3922035 0.0000000 0.0000000</code></pre>
+<pre><code>## [1] 0.3361015 0.3304125 0.3334860 0.0000000</code></pre>
 <pre class="r"><code>##Log likelihood Results
 sl.LL  </code></pre>
 <pre><code>## 
@@ -248,22 +248,22 @@ sl.LL  </code></pre>
 ##     method = &quot;method.NNloglik&quot;) 
 ## 
 ## 
-##                    Risk        Coef
-## SL.glm_All    0.5876302 0.997260486
-## SL.lda_All    0.5906470 0.000000000
-## SL.qda_All    0.8026571 0.002739514
-## SL.ranger_All       Inf 0.000000000</code></pre>
+##                    Risk Coef
+## SL.glm_All    0.5931421    0
+## SL.lda_All    0.5931418    0
+## SL.qda_All    0.5889857    1
+## SL.ranger_All       Inf    0</code></pre>
 <pre class="r"><code>NNloglik(par = c(1/4,1/4,1/4,1/4), A = cv.X[,2:5], y = cv.X[,1])</code></pre>
 <pre><code>## $par
-##         GLM         LDA         QDA          RF 
-## 0.986311782 0.000000000 0.003474458 0.000000000 
+##      GLM      LDA      QDA       RF 
+## 0.000000 0.000000 1.004494 0.000000 
 ## 
 ## $value
-## [1] 11751.64
+## [1] 11776.67
 ## 
 ## $counts
 ## function gradient 
-##       21       21 
+##       12       12 
 ## 
 ## $convergence
 ## [1] 0
@@ -271,6 +271,6 @@ sl.LL  </code></pre>
 ## $message
 ## [1] &quot;CONVERGENCE: REL_REDUCTION_OF_F &lt;= FACTR*EPSMCH&quot;
 ## 
-##         GLM         LDA         QDA          RF 
-## 0.996489689 0.000000000 0.003510311 0.000000000</code></pre>
+## GLM LDA QDA  RF 
+##   0   0   1   0</code></pre>
 </div>
