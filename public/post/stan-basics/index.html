@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.32.2" />
+
+
+<title>Stan Basics - Fledgling Statistician</title>
+<meta property="og:title" content="Stan Basics - Fledgling Statistician">
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/%3cnil%3e"
+         width=""
+         height=""
+         alt="">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rtravis89">GitHub</a></li>
+    
+    <li><a href="https://www.linkedin.com/in/rtravis89">LinkedIn</a></li>
+    
+    <li><a href="/post">Posts</a></li>
+    
+    <li><a href="https://twitter.com/fledglingstat">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">6 min read</span>
+    
+
+    <h1 class="article-title">Stan Basics</h1>
+
+    
+    <span class="article-date">2018/04/14</span>
+    
+
+    <div class="article-content">
+      <p>I attended a great short course on bayesian workflow using Stan at the New England Statistics Symposium yesterday. If you don’t know, <a href="http://mc-stan.org/">Stan</a> is “a state-of-the-art platform for statistical modeling and high-performance statistical computation”. You can easily interface with Stan through R (or python or a bunch of other languages). I figured it would be valuable for myself, and possibly others, to work through a few different problems in Stan and share my code. It’s a bit intimidating at first, but that’s always true of learning new languages. In this post I work through some simple one parameter models. The focus is on fitting the models in Stan and comparing them to analytically derived results, so I’m not going to go over diagnostics or general work flow.</p>
+<div id="simple-one-parameters-models" class="section level2">
+<h2>Simple one parameters models</h2>
+<p>I figured it would be valuable to start with coding some simple one parameter models where the answer can be known analytically (you can solve the answer by hand). Stan is typically used for some really cool stuff, but that can be intimidating if you’re just trying to dabble. The two simple examples I chose were from Jim Albert’s book <a href="https://www.amazon.com/Bayesian-Computation-R-Use/dp/0387922970/ref=sr_1_5?ie=UTF8&amp;qid=1523725608&amp;sr=8-5&amp;keywords=jim+albert">Bayesian Computation with R</a>. The first is a normal model with known mean and unknown variance and the second is a poisson model with an unknown rate parameter.</p>
+</div>
+<div id="normal-model-with-known-mean-and-unknown-variance" class="section level2">
+<h2>Normal model with known mean and unknown Variance</h2>
+<p>Albert provides the example of comparing the difference in American football game scores and published point spread. If we assume that the difference is from a normal distribution with mean 0 and unknown variance and we use an “uninformative” prior on <span class="math inline">\(\sigma^2\)</span>, <span class="math inline">\(p(\sigma^2) = 1/\sigma^2\)</span>, then <span class="math inline">\(p(\sigma^2 | data)\)</span> has a known posterior (inverse chi-square) (See Albert’s book, pg. 40 Second edition for details). The code below is provided by Albert and samples from this posterior. I additionally plot a histogram of the posterior and print the .025, .5, and .975 quantiles of the distribution.</p>
+<pre class="r"><code>library(ggplot2)
+library(LearnBayes)
+data(&quot;footballscores&quot;)
+d &lt;- with(footballscores, favorite - underdog - spread)
+n &lt;- nrow(footballscores)
+v &lt;- sum(d^2)
+
+#Standard deviation posterior
+P &lt;- rchisq(4000, n)/v
+s &lt;- sqrt(1/P)
+qplot(s, geom = &quot;histogram&quot;, 
+      main = &quot;Posterior Distribution of S&quot;) +
+  geom_vline(xintercept = quantile(s, .5)) +
+  theme_classic()</code></pre>
+<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="/post/2018-04-14-stan-basics_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<pre class="r"><code>#Interval
+quantile(s, c(.025,.5,.975))</code></pre>
+<pre><code>##     2.5%      50%    97.5% 
+## 13.15238 13.84591 14.61275</code></pre>
+<p>Now we can fit the same model in Stan. Using Stan in R requires installing the package <a href="http://mc-stan.org/users/interfaces/rstan">RStan</a>. You can pass Stan code to the stan function in Rstan as a string, or you can write your stan code separately and save it as .stan and use the file argument in the stan function. I think it’s easier to do the latter. You can write and edit Stan code in Rstudio by simply opening up a new text file. Once the file is saved as .stan, the syntax highlighting should start.</p>
+<p>The stan function requires you to pass the data as a list and an argument for the location of your stan file.</p>
+<pre class="r"><code>library(rstan)
+
+data.list &lt;- list(n = n, d = d)
+
+stan.samples &lt;- stan(file = &quot;code\\normal_unknown_variance.stan&quot;, 
+                     data = data.list,
+                     iter = 4000)</code></pre>
+<p>The stan code for the model is below. As can be seen, Stan requires a few blocks of code in addition to the code specifying the model. I left the prior for the variance as unspecified. Stan uses a default in that situation.</p>
+<pre><code>## 
+## data {
+##   int&lt;lower = 0&gt; n;
+##   vector[n] d;
+## }
+## //Unknown parameters: standard deviation
+## parameters {
+##   real&lt;lower = 0&gt; S;
+## }
+## 
+## model {
+##   d ~ normal(0, sqrt(S));
+## }
+## 
+## generated quantities {
+##     real s;
+##     s = sqrt(S);
+## }</code></pre>
+<p>The stan samples object contains draws from the posterior, which can be used to make inferences about our unknown parameter as well as check fit diagnostics. I plotted the draws as a histogram and printed the same quantiles as before.</p>
+<pre class="r"><code>#posterior inference
+posterior &lt;- as.data.frame(stan.samples)
+with(posterior,
+  qplot(s, geom = &quot;histogram&quot;,
+      main = &quot;Posterior Distribution of S&quot;) + geom_vline(xintercept = quantile(s, .5)) +
+      theme_classic()
+)</code></pre>
+<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="/post/2018-04-14-stan-basics_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre class="r"><code>quantile(posterior$s, c(.025, .5, .975))</code></pre>
+<pre><code>##     2.5%      50%    97.5% 
+## 13.18149 13.87012 14.63985</code></pre>
+<p>The histogram from the posterior derived from Stan is essentially identical to the analytically derived one above. The quantiles match very closely as well.</p>
+</div>
+<div id="poisson-model-with-unknown-rate" class="section level2">
+<h2>Poisson model with unknown rate</h2>
+<p>The second example from Albert’s book involves estimating the mortality rate of heart transplants from a hospital. Since we’re dealing with counts, a natural starting point is with a poisson likelihood. The gamma distribution is a conjugate prior for the poisson likelihood. The prior Albert uses is <span class="math inline">\(gamma(alpha = 16, beta = 15174)\)</span>, and I’m going to use it as well. The set up for this problem involves two measurements, the number of heart transplant failures, <strong>fails</strong>, and the total number of heart transplants, <strong>exposures</strong>. The code below draws samples from the posterior, <span class="math inline">\(p(\lambda | data)\)</span>, which is known to be <span class="math inline">\(gamma(alpha = 16 + yobs, beta = 15174 + exposures)\)</span>.</p>
+<pre class="r"><code>alpha &lt;- 16
+beta &lt;- 15174
+yobs &lt;- 1
+exposure &lt;- 66
+
+lambda &lt;- rgamma(1000, shape = alpha + yobs, rate = beta + exposure)
+qplot(lambda, geom = &quot;histogram&quot;, 
+      main = &quot;Posterior Distribution of lambda&quot;) + 
+        geom_vline(xintercept = quantile(lambda, .5)) +
+  theme_classic()</code></pre>
+<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="/post/2018-04-14-stan-basics_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>quantile(lambda, c(.025,.5,.975))</code></pre>
+<pre><code>##         2.5%          50%        97.5% 
+## 0.0006496529 0.0010801951 0.0017239690</code></pre>
+<p>The stan code to fit the same model is below. In the data block I initialize 4 variables, the two parameters for the gamma prior, alpha and beta, and then the actual data, yobs and exposure. The values for these variables are provided as a list for the data argument of the stan function.</p>
+<pre class="r"><code>data.list &lt;- list(alpha = alpha, beta = beta, yobs = yobs, ex = exposure)
+
+stan.samples.poisson &lt;- stan(file = &quot;code\\poisson_rate.stan&quot;, 
+                          data = data.list,
+                          iter = 4000)</code></pre>
+<p>The resulting posterior distribution is plotted below and the 2.5, .5, and 97.5 quantiles are printed.</p>
+<pre class="r"><code>#posterior inference
+posterior &lt;- as.data.frame(stan.samples.poisson)
+with(posterior,
+  qplot(lambda, geom = &quot;histogram&quot;,
+      main = &quot;Posterior Distribution of lambda&quot;) + 
+      geom_vline(xintercept = quantile(lambda, .5)) +
+      theme_classic()
+)</code></pre>
+<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="/post/2018-04-14-stan-basics_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<pre class="r"><code>quantile(posterior$lambda, c(.025, .5, .975))</code></pre>
+<pre><code>##         2.5%          50%        97.5% 
+## 0.0006560578 0.0011007345 0.0017319650</code></pre>
+<p>As before, the results are very similar, suggesting that I (hopefully!) set up the models in stan correctly. The actual stan code for the poisson model is printed below.</p>
+<pre><code>## //Define data going into model
+## data {
+##   int&lt;lower = 0&gt; yobs;
+##   int&lt;lower = 0&gt; ex;
+##   real&lt;lower = 0&gt; alpha;
+##   real&lt;lower = 0&gt; beta;
+## }
+## //Unknown parameters: lambda
+## parameters {
+##   real&lt;lower = 0&gt; lambda;
+## }
+## //Model
+## model {
+##   lambda ~ gamma(alpha, beta);
+##   yobs ~ poisson(ex*lambda);
+## }</code></pre>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>Hopefully, seeing the code for these simple models is helpful for anyone reading this. Writing Stan code for such simple models is obviously overkill (and tedious). But it was helpful since I already knew what the answers were supposed to be. I plan to move on to fitting more complicated regression models in Stan next.</p>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdn.bootcss.com/highlight.js//highlight.min.js"></script>
+
+
+
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+
