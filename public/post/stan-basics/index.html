@@ -98,7 +98,7 @@ qplot(s, geom = &quot;histogram&quot;,
 <pre class="r"><code>#Interval
 quantile(s, c(.025,.5,.975))</code></pre>
 <pre><code>##     2.5%      50%    97.5% 
-## 13.15238 13.84591 14.61275</code></pre>
+## 13.13765 13.85217 14.64112</code></pre>
 <p>Now we can fit the same model in Stan. Using Stan in R requires installing the package <a href="http://mc-stan.org/users/interfaces/rstan">RStan</a>. You can pass Stan code to the stan function in Rstan as a string, or you can write your stan code separately and save it as .stan and use the file argument in the stan function. I think it’s easier to do the latter. You can write and edit Stan code in Rstudio by simply opening up a new text file. Once the file is saved as .stan, the syntax highlighting should start.</p>
 <p>The stan function requires you to pass the data as a list and an argument for the location of your stan file.</p>
 <pre class="r"><code>library(rstan)
@@ -144,7 +144,7 @@ with(posterior,
 </div>
 <div id="poisson-model-with-unknown-rate" class="section level2">
 <h2>Poisson model with unknown rate</h2>
-<p>The second example from Albert’s book involves estimating the mortality rate of heart transplants from a hospital. Since we’re dealing with counts, a natural starting point is with a poisson likelihood. The gamma distribution is a conjugate prior for the poisson likelihood. The prior Albert uses is <span class="math inline">\(gamma(alpha = 16, beta = 15174)\)</span>, and I’m going to use it as well. The set up for this problem involves two measurements, the number of heart transplant failures, <strong>fails</strong>, and the total number of heart transplants, <strong>exposures</strong>. The code below draws samples from the posterior, <span class="math inline">\(p(\lambda | data)\)</span>, which is known to be <span class="math inline">\(gamma(alpha = 16 + yobs, beta = 15174 + exposures)\)</span>.</p>
+<p>The second example from Albert’s book involves estimating the mortality rate of heart transplants from a hospital. Since we’re dealing with counts, a natural starting point is with a poisson likelihood. The gamma distribution is a conjugate prior for the poisson likelihood. The prior Albert uses is <span class="math inline">\(gamma(alpha = 16, beta = 15174)\)</span>, and I’m going to use it as well. The set up for this problem involves two measurements, the number of heart transplant failures, <strong>yobs</strong>, and the total number of heart transplants, <strong>exposures</strong>. The code below draws samples from the posterior, <span class="math inline">\(p(\lambda | data)\)</span>, which is known to be <span class="math inline">\(gamma(alpha = 16 + yobs, beta = 15174 + exposures)\)</span>.</p>
 <pre class="r"><code>alpha &lt;- 16
 beta &lt;- 15174
 yobs &lt;- 1

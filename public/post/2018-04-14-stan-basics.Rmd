@@ -73,7 +73,7 @@ The histogram from the posterior derived from Stan is essentially identical to t
 
 ##Poisson model with unknown rate
 
-The second example from Albert's book involves estimating the mortality rate of heart transplants from a hospital. Since we're dealing with counts, a natural starting point is with a poisson likelihood. The gamma distribution is a conjugate prior for the poisson likelihood. The prior Albert uses is $gamma(alpha = 16, beta = 15174)$, and I'm going to use it as well. The set up for this problem involves two measurements, the number of heart transplant failures, **fails**, and the total number of heart transplants, **exposures**. The code below draws samples from the posterior, $p(\lambda | data)$, which is known to be $gamma(alpha = 16 + yobs, beta = 15174 + exposures)$. 
+The second example from Albert's book involves estimating the mortality rate of heart transplants from a hospital. Since we're dealing with counts, a natural starting point is with a poisson likelihood. The gamma distribution is a conjugate prior for the poisson likelihood. The prior Albert uses is $gamma(alpha = 16, beta = 15174)$, and I'm going to use it as well. The set up for this problem involves two measurements, the number of heart transplant failures, **yobs**, and the total number of heart transplants, **exposures**. The code below draws samples from the posterior, $p(\lambda | data)$, which is known to be $gamma(alpha = 16 + yobs, beta = 15174 + exposures)$. 
 
 ```{r}
 alpha <- 16
