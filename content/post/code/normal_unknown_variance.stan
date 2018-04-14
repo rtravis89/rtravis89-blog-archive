@@ -3,7 +3,7 @@ data {
   int<lower = 0> n;
   vector[n] d;
 }
-//Unknown parameters: standard deviation
+//Unknown parameters: Variance
 parameters {
   real<lower = 0> S;
 }

@@ -37,7 +37,7 @@ qplot(s, geom = &quot;histogram&quot;,
 <pre class="r"><code>#Interval
 quantile(s, c(.025,.5,.975))</code></pre>
 <pre><code>##     2.5%      50%    97.5% 
-## 13.13765 13.85217 14.64112</code></pre>
+## 13.11059 13.84735 14.62605</code></pre>
 <p>Now we can fit the same model in Stan. Using Stan in R requires installing the package <a href="http://mc-stan.org/users/interfaces/rstan">RStan</a>. You can pass Stan code to the stan function in Rstan as a string, or you can write your stan code separately and save it as .stan and use the file argument in the stan function. I think it’s easier to do the latter. You can write and edit Stan code in Rstudio by simply opening up a new text file. Once the file is saved as .stan, the syntax highlighting should start.</p>
 <p>The stan function requires you to pass the data as a list and an argument for the location of your stan file.</p>
 <pre class="r"><code>library(rstan)
@@ -53,7 +53,7 @@ stan.samples &lt;- stan(file = &quot;code\\normal_unknown_variance.stan&quot;,
 ##   int&lt;lower = 0&gt; n;
 ##   vector[n] d;
 ## }
-## //Unknown parameters: standard deviation
+## //Unknown parameters: Variance
 ## parameters {
 ##   real&lt;lower = 0&gt; S;
 ## }
@@ -66,7 +66,7 @@ stan.samples &lt;- stan(file = &quot;code\\normal_unknown_variance.stan&quot;,
 ##     real s;
 ##     s = sqrt(S);
 ## }</code></pre>
-<p>The stan samples object contains draws from the posterior, which can be used to make inferences about our unknown parameter as well as check fit diagnostics. I plotted the draws as a histogram and printed the same quantiles as before.</p>
+<p>The stan.samples object contains draws from the posterior, which can be used to make inferences about our unknown parameter as well as check fit diagnostics. I plotted the draws as a histogram and printed the same quantiles as before.</p>
 <pre class="r"><code>#posterior inference
 posterior &lt;- as.data.frame(stan.samples)
 with(posterior,
@@ -79,7 +79,7 @@ with(posterior,
 <pre class="r"><code>quantile(posterior$s, c(.025, .5, .975))</code></pre>
 <pre><code>##     2.5%      50%    97.5% 
 ## 13.18149 13.87012 14.63985</code></pre>
-<p>The histogram from the posterior derived from Stan is essentially identical to the analytically derived one above. The quantiles match very closely as well.</p>
+<p>The histogram from the posterior derived from Stan is very similar to the analytically derived one above. The quantiles match very closely as well. The slight differences may have to do with the default prior for Stan being slightly different than that used by Albert, or could simply be sampling error since we only used a limited number of samples for both esimates.</p>
 </div>
 <div id="poisson-model-with-unknown-rate" class="section level2">
 <h2>Poisson model with unknown rate</h2>
