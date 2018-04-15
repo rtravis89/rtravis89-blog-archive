@@ -71,10 +71,10 @@
     
 
     <div class="article-content">
-      <p>Yesterday I wrote a post using Stan to fit simple one parameter models. These are boring, but helpful for learning the basics. Today, I’d like to start building a series of increasingly complicated regression models. I have data on all the injuries that occured during the 2017 NFL (American Football) season, courtesy of <a href="https://www.armchairanalysis.com/" class="uri">https://www.armchairanalysis.com/</a>. What I’d like to do is build a model to predict whether a player will have an injury, where I’m going to define injury as being listed at game time as out, or on injured reserve (IR). I’m also going to restrict the analysis to a subset of positions: quarterbacks, running backs, tight ends, and wide receivers.</p>
+      <p>Yesterday I wrote a post using Stan to fit simple one parameter models. These are boring, but helpful for learning the basics. Today, I’d like to start building a series of increasingly complicated regression models. I have data on all the injuries that occured during the 2017 NFL (American Football) season, courtesy of <a href="https://www.armchairanalysis.com/" class="uri">https://www.armchairanalysis.com/</a>. What I’d like to do is build a model to predict whether a player will have an injury, where I’m going to define injury as being listed at game time as out, or on injured reserve (IR) at any time during the season. I’m also going to restrict the analysis to a subset of positions: quarterbacks, running backs, tight ends, and wide receivers.</p>
 <div id="creating-the-analysis-data-set" class="section level2">
 <h2>Creating the Analysis Data set</h2>
-<p>The code below creates a data set for every player who played (took at least 1 snap) in 2017 containing information on whether the player was injured. Joining the tables was a bit tricky, so if you notice any issues please let me know. The four data sets I’m using (player, game, injury, offense) are from armchair analysis. I didn’t display the code loading them. The final data set has the player position and an indicator variable for whether they were at injured (listed as out or IR at game time) anytime during the season.</p>
+<p>The code below creates a data set for every player who played (took at least 1 snap) in 2017 and information on whether the player was injured. Joining the tables was a bit tricky, so if you notice any issues please let me know. The four data sets I’m using (player, game, injury, offense) are from armchair analysis. I didn’t display the code loading them. The final data set has the player position and an indicator variable for whether they were injured (listed as out or IR at game time) anytime during the season.</p>
 <pre class="r"><code>#NFL Injury Data
 library(tidyverse)
 library(rstan)
@@ -247,7 +247,7 @@ ggplot(p_hat_ppc, aes(p_hat_ppc)) + geom_histogram(binwidth = 1/100) +
 ##     p_hat_WR_ppc = p_hat_WR_ppc / n_WR;
 ##   }
 ## }</code></pre>
-<p>The model is fit the same as before except the data provided are a little different. N_pos is the number of levels to the positions variable (pos). Position is converted to a numeric vector where 1 = QB, 2 = RB, 3 = TE, 4 = WR. I’m not sure if Stan would automatically coerce the factor into numeric or not. Otherwise, N and y are the same.</p>
+<p>The model is fit the same as before except the data provided are a little different. N_pos is the number of levels to the positions variable (pos). Position is converted to a numeric vector where 1 = QB, 2 = RB, 3 = TE, 4 = WR. I’m not sure if Stan would automatically coerce the factor into numeric or not. Otherwise, N and y are the same. I use the same prior as before, <span class="math inline">\(normal(0,5)\)</span>, for the position effects.</p>
 <pre class="r"><code>#Fit model with position variable
 data.list &lt;- list(N = nrow(inj.data), N_pos = 4, pos = as.numeric(factor(inj.data$pos)),
                   y = inj.data$injured)
