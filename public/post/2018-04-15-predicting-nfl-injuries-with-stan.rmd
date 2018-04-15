@@ -141,6 +141,7 @@ traceplot(fit2)
 params <- extract(fit2)
 
 p_hat_ppc = data.frame(params)
+head(p_hat_ppc)
 
 library(gridExtra)
 o <- ggplot(p_hat_ppc, aes(p_hat_ppc)) + geom_histogram(binwidth = 1/100) +
@@ -158,4 +159,22 @@ grid.arrange(o,a,b,c,d)
 ```
 
 
-This model clearly improves the fit. Of course there must be more to the story than this. I hope to add more content to this post as I think more about the problem and the data I have available.
+This model clearly improves the fit. Of course there must be more to the story than this. I hope to add more content to this post as I think more about the problem and the data I have available. For now, we can look at the marginal posterior distributions for each position.
+
+```{r}
+a <- ggplot(p_hat_ppc, aes(exp(alpha.1))) + geom_histogram(binwidth = 1/100) +
+  xlab("QB Effect") +
+  theme_bw()
+b <- ggplot(p_hat_ppc, aes(exp(alpha.2))) + geom_histogram(binwidth = 1/100) +
+  xlab("RB Effect") +
+  theme_bw()
+c <- ggplot(p_hat_ppc, aes(exp(alpha.3))) + geom_histogram(binwidth = 1/100) +
+  xlab("TE Effect") +
+  theme_bw()
+d <- ggplot(p_hat_ppc, aes(exp(alpha.4))) + geom_histogram(binwidth = 1/100) +
+  xlab("WR Effect") +
+  theme_bw()
+grid.arrange(a,b,c,d)
+```
+
+These last marginal plots show the estimated multiplicative effect of each position on even odds (probability 1/2 of an injury). The height of each histogram represents the relative plausibility of the effect. The majority of the mass for each position is below 1, suggesting that all these positions have a predicted injury rate less than .5.

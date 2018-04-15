@@ -202,8 +202,22 @@ traceplot(fit2)</code></pre>
 params &lt;- extract(fit2)
 
 p_hat_ppc = data.frame(params)
-
-library(gridExtra)</code></pre>
+head(p_hat_ppc)</code></pre>
+<pre><code>##      alpha.1    alpha.2      alpha.3     alpha.4 p_hat_ppc p_hat_QB_ppc
+## 1 -0.4583329 -0.2061014 -0.455294597 -0.11832390 0.4338235    0.4021739
+## 2 -0.7630776 -0.3645872 -0.233786211 -0.35338762 0.3676471    0.3152174
+## 3 -0.4839392 -0.2106056 -0.069165609 -0.14304096 0.4573529    0.3478261
+## 4 -0.7667736  0.1898111 -0.239908044 -0.27107444 0.4132353    0.3152174
+## 5 -0.2340542 -0.1822146  0.004681824  0.08346487 0.5176471    0.4782609
+## 6 -0.9798767 -0.2153992 -0.335015985 -0.26263767 0.4455882    0.3260870
+##   p_hat_RB_ppc p_hat_TE_ppc p_hat_WR_ppc      lp__
+## 1    0.4354839    0.3576642    0.4830189 -465.3913
+## 2    0.4139785    0.3649635    0.3547170 -466.0841
+## 3    0.4516129    0.5255474    0.4641509 -465.0915
+## 4    0.4569892    0.4525547    0.3962264 -469.8522
+## 5    0.5322581    0.4890511    0.5358491 -469.0604
+## 6    0.4569892    0.4452555    0.4792453 -466.7845</code></pre>
+<pre class="r"><code>library(gridExtra)</code></pre>
 <pre><code>## 
 ## Attaching package: &#39;gridExtra&#39;</code></pre>
 <pre><code>## The following object is masked from &#39;package:dplyr&#39;:
@@ -221,5 +235,20 @@ d &lt;- ggplot(p_hat_ppc, aes(p_hat_WR_ppc)) + geom_histogram(binwidth = 1/25) +
   geom_vline(aes(xintercept = WR.mean, col = &quot;red&quot;)) + theme_bw()
 grid.arrange(o,a,b,c,d)</code></pre>
 <p><img src="/post/2018-04-15-predicting-nfl-injuries-with-stan_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
-<p>This model clearly improves the fit. Of course there must be more to the story than this. I hope to add more content to this post as I think more about the problem and the data I have available.</p>
+<p>This model clearly improves the fit. Of course there must be more to the story than this. I hope to add more content to this post as I think more about the problem and the data I have available. For now, we can look at the marginal posterior distributions for each position.</p>
+<pre class="r"><code>a &lt;- ggplot(p_hat_ppc, aes(exp(alpha.1))) + geom_histogram(binwidth = 1/100) +
+  xlab(&quot;QB Effect&quot;) +
+  theme_bw()
+b &lt;- ggplot(p_hat_ppc, aes(exp(alpha.2))) + geom_histogram(binwidth = 1/100) +
+  xlab(&quot;RB Effect&quot;) +
+  theme_bw()
+c &lt;- ggplot(p_hat_ppc, aes(exp(alpha.3))) + geom_histogram(binwidth = 1/100) +
+  xlab(&quot;TE Effect&quot;) +
+  theme_bw()
+d &lt;- ggplot(p_hat_ppc, aes(exp(alpha.4))) + geom_histogram(binwidth = 1/100) +
+  xlab(&quot;WR Effect&quot;) +
+  theme_bw()
+grid.arrange(a,b,c,d)</code></pre>
+<p><img src="/post/2018-04-15-predicting-nfl-injuries-with-stan_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>These last marginal plots show the estimated multiplicative effect of each position on even odds (probability 1/2 of an injury). The height of each histogram represents the relative plausibility of the effect. The majority of the mass for each position is below 1, suggesting that all these positions have a predicted injury rate less than .5.</p>
 </div>
