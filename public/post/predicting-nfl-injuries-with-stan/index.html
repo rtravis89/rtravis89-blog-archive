@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.32.2" />
+
+
+<title>Predicting NFL Injuries with Stan - Fledgling Statistician</title>
+<meta property="og:title" content="Predicting NFL Injuries with Stan - Fledgling Statistician">
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/%3cnil%3e"
+         width=""
+         height=""
+         alt="">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rtravis89">GitHub</a></li>
+    
+    <li><a href="https://www.linkedin.com/in/rtravis89">LinkedIn</a></li>
+    
+    <li><a href="/post">Posts</a></li>
+    
+    <li><a href="https://twitter.com/fledglingstat">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">8 min read</span>
+    
+
+    <h1 class="article-title">Predicting NFL Injuries with Stan</h1>
+
+    
+    <span class="article-date">2018/04/15</span>
+    
+
+    <div class="article-content">
+      <p>Yesterday I wrote a post using Stan to fit simple one parameter models. These are boring, but helpful for learning the basics. Today, I’d like to start building a series of increasingly complicated regression models. I have data on all the injuries that occured during the 2017 NFL (American Football) season, courtesy of <a href="https://www.armchairanalysis.com/" class="uri">https://www.armchairanalysis.com/</a>. What I’d like to do is build a model to predict whether a player will have an injury, where I’m going to define injury as being listed at game time as out, or on injured reserve (IR). I’m also going to restrict the analysis to a subset of positions: quarterbacks, running backs, tight ends, and wide receivers.</p>
+<div id="creating-the-analysis-data-set" class="section level2">
+<h2>Creating the Analysis Data set</h2>
+<p>The code below creates a data set for every player who played (took at least 1 snap) in 2017 containing information on whether the player was injured. Joining the tables was a bit tricky, so if you notice any issues please let me know. The four data sets I’m using (player, game, injury, offense) are from armchair analysis. I didn’t display the code loading them. The final data set has the player position and an indicator variable for whether they were at injured (listed as out or IR at game time) anytime during the season.</p>
+<pre class="r"><code>#NFL Injury Data
+library(tidyverse)
+library(rstan)
+options(tibble.print_max = 100)</code></pre>
+<pre class="r"><code>#1. all players who were injured
+#2. All players
+
+#players who had any injury indication in 2017
+inj.players &lt;- game %&gt;% filter(seas == 2017 &amp; wk %in% c(1:17)) %&gt;%
+  select(gid) %&gt;% left_join(injury, by = c(&quot;gid&quot; = &quot;gid&quot;)) %&gt;% select(player, gstat) %&gt;%
+  mutate(injured = ifelse(gstat %in% c(&quot;IR&quot;, &quot;Out&quot;), 1, 0)) %&gt;% group_by(player) %&gt;%
+  summarize(games.inj = sum(injured)) %&gt;% mutate(injured = ifelse(games.inj &gt; 0, 1, 0)) %&gt;%
+  left_join(player, by = c(&quot;player&quot; = &quot;player&quot;)) %&gt;% select(player, pos1, games.inj, injured) 
+#All players who played an offensive snap in 2017
+all.players &lt;- game %&gt;% filter(seas == 2017 &amp; wk %in% c(1:17)) %&gt;%
+  select(gid) %&gt;% left_join(offense, by = c(&quot;gid&quot; = &quot;gid&quot;)) %&gt;%
+  select(player) %&gt;% left_join(player, by = c(&quot;player&quot; = &quot;player&quot;)) %&gt;%
+  select(player, pos1) %&gt;% group_by(player) %&gt;% distinct()
+#Join the two tables. Players who didn&#39;t get hurt will have missing values for injured
+inj.data &lt;- all.players %&gt;% full_join(inj.players, by = c(&quot;player&quot; = &quot;player&quot;)) %&gt;%
+  mutate(pos = ifelse(is.na(pos1.x),pos1.y,pos1.x)) %&gt;% 
+  ungroup() %&gt;% select(pos,injured) %&gt;%
+  filter(pos %in% c(&quot;QB&quot;,&quot;RB&quot;,&quot;TE&quot;,&quot;WR&quot;))
+#missing values for injured indicator should be 0
+inj.data$injured[is.na(inj.data$injured)] &lt;- 0
+
+inj.data</code></pre>
+<pre><code>## # A tibble: 680 x 2
+##    pos   injured
+##    &lt;chr&gt;   &lt;dbl&gt;
+##  1 RB       0   
+##  2 QB       0   
+##  3 TE       0   
+##  4 RB       1.00
+##  5 RB       0   
+##  6 WR       0   
+##  7 WR       1.00
+##  8 TE       1.00
+##  9 RB       1.00
+## 10 RB       0   
+## # ... with 670 more rows</code></pre>
+</div>
+<div id="fitting-an-intercept-only-model" class="section level2">
+<h2>Fitting an intercept only model</h2>
+<p>Now that we have the data, I can fit a model. Normally I would do a little more exploratory analysis before moving to model fitting. The first model I’m going to fit is simply an intercept only logistic regression model. The prior on the intercept is a <span class="math inline">\(normal(0,5)\)</span>. The Stan code for this model is printed below. The generated quantities block generates values for <a href="https://stats.stackexchange.com/questions/115157/what-are-posterior-predictive-checks-and-what-makes-them-useful">posterior predictive checking</a>. PPC involves comparing the posterior predictive distribution with the observed data, with the goal being to see whether there are issues with the model.</p>
+<pre><code>## data {
+##   int&lt;lower = 1&gt; N;
+##   int y[N];
+## }
+## 
+## //Intercept is the only parameter
+## parameters {
+##   real alpha;
+## }
+## 
+## model {
+##   alpha ~ normal(0, 5);
+##   y ~ bernoulli_logit(alpha);
+## }
+## 
+## generated quantities {
+##   real p_hat_ppc = 0;
+##   
+##   for (n in 1:N) {
+##     int y_ppc = bernoulli_logit_rng( alpha);
+##     p_hat_ppc = p_hat_ppc + y_ppc;
+##   }
+##   p_hat_ppc = p_hat_ppc / N;
+## }</code></pre>
+<p>The function that fits the Stan model requires the data to be provided as a list.</p>
+<pre class="r"><code>#Fit intercept only model in Stan
+#N is number of rows
+data.list &lt;- list(N = nrow(inj.data), y = inj.data$injured)
+
+fit &lt;- stan(file =&#39;code\\intercept_LR.stan&#39;,
+            data = data.list)</code></pre>
+<p>We can visually inspect the trace plot to check the sampling behavior of the markov chains used to construct the posterior. You want to see a nice mixing behavior, like those we get.</p>
+<pre class="r"><code>traceplot(fit)</code></pre>
+<p><img src="/post/2018-04-15-predicting-nfl-injuries-with-stan_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p>Before I move on to interpreting the model, I want to make sure that it fits well via posterior predictive checks. If I plot a histogram of predictived values of y (probability of injury) and over lay a vertical line corresponding to the overall proportion of injuries, it seems like the model has a great fit. However, we also have information about player position. In the second plot I overlay vertical lines for the proportion of injuries for all four positions in addition to the overall injury rate.</p>
+<pre class="r"><code>#Posterior Samples
+params &lt;- extract(fit)
+#PPC
+p_hat_ppc = data.frame(p_hat_ppc = params$p_hat_ppc)
+OVERALL.mean &lt;- mean(data.list$y)
+QB.mean &lt;- mean(data.list$y[inj.data$pos == &quot;QB&quot;])
+RB.mean &lt;- mean(data.list$y[inj.data$pos == &quot;RB&quot;])
+TE.mean &lt;- mean(data.list$y[inj.data$pos == &quot;TE&quot;])
+WR.mean &lt;- mean(data.list$y[inj.data$pos == &quot;WR&quot;])
+
+ggplot(p_hat_ppc, aes(p_hat_ppc)) + geom_histogram(binwidth = 1/100) +
+  geom_vline(aes(xintercept = OVERALL.mean, col = &quot;black&quot;)) + theme_bw()</code></pre>
+<p><img src="/post/2018-04-15-predicting-nfl-injuries-with-stan_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(p_hat_ppc, aes(p_hat_ppc)) + geom_histogram(binwidth = 1/100) +
+  geom_vline(aes(xintercept = OVERALL.mean, col = &quot;Overall&quot;)) +
+  geom_vline(aes(xintercept = QB.mean, col = &quot;QB&quot;)) +
+  geom_vline(aes(xintercept = RB.mean, col = &quot;RB&quot;)) +
+  geom_vline(aes(xintercept = TE.mean, col = &quot;TE&quot;)) +
+  geom_vline(aes(xintercept = WR.mean, col = &quot;WR&quot;)) +
+  scale_color_manual(name = &quot;Position&quot;, 
+                     values = c(Overall = &quot;black&quot;,
+                                QB = &quot;red&quot;,
+                                RB = &quot;blue&quot;,
+                                TE = &quot;green&quot;,
+                                WR = &quot;purple&quot;)) +
+  ggtitle(&quot;Posterior Predictive Distribution for Probability of Injury&quot;) +
+  theme_bw()</code></pre>
+<p><img src="/post/2018-04-15-predicting-nfl-injuries-with-stan_files/figure-html/unnamed-chunk-7-2.png" width="672" /></p>
+<p>We can see from the second plot that the model would do very poorly for predicting quarterback injuries in particular. This suggests that a simple improvement to the model would be to include each players position.</p>
+</div>
+<div id="enriching-the-model-with-position-information" class="section level2">
+<h2>Enriching the model with position information</h2>
+<p>Fitting a model in Stan with this information is fairly straight forward, but a little tricky. The key thing here is that our unknown parameters are a vector. I parameterized the model as a “cell means” model, so there is not intercept, just a mean parameter indexed by the four positions. You’ll notice that the generated quantities block is much longer now, since I had generate predictions for each position, as well as the overall.</p>
+<pre><code>## data {
+##   int&lt;lower = 1&gt; N;
+##   int&lt;lower = 1&gt; N_pos;
+##   int&lt;lower = 1, upper = 4&gt; pos[N];
+##   int y[N];
+## }
+## 
+## //alpha = intercept.
+## parameters {
+##   vector[N_pos] alpha;
+## }
+## 
+## model {
+##   alpha ~ normal(0, 5);
+##   y ~ bernoulli_logit(alpha[pos]);
+## }
+## 
+## generated quantities {
+##   real p_hat_ppc = 0;
+##   real p_hat_QB_ppc = 0;
+##   real p_hat_RB_ppc = 0;
+##   real p_hat_TE_ppc = 0;
+##   real p_hat_WR_ppc = 0;
+##   
+##   {
+##     int n_QB = 0;
+##     int n_RB = 0;
+##     int n_TE = 0;
+##     int n_WR = 0;
+##     
+##     for (n in 1:N) {
+##       int y_ppc = bernoulli_logit_rng(alpha[pos[n]]);
+##       
+##       p_hat_ppc = p_hat_ppc + y_ppc;
+##       if (pos[n] == 1) {
+##         p_hat_QB_ppc = p_hat_QB_ppc + y_ppc;
+##         n_QB = n_QB + 1;
+##       }
+##       else if (pos[n] == 2) {
+##         p_hat_RB_ppc = p_hat_RB_ppc + y_ppc;
+##         n_RB = n_RB + 1;
+##       }
+##       else if (pos[n] == 3) {
+##         p_hat_TE_ppc = p_hat_TE_ppc + y_ppc;
+##         n_TE = n_TE + 1;
+##       }
+##       else {
+##         p_hat_WR_ppc = p_hat_WR_ppc + y_ppc;
+##         n_WR = n_WR + 1;
+##       }
+##       
+##     }
+##     p_hat_ppc = p_hat_ppc / (n_QB + n_RB + n_TE + n_WR);
+##     p_hat_QB_ppc = p_hat_QB_ppc / n_QB;
+##     p_hat_RB_ppc = p_hat_RB_ppc / n_RB;
+##     p_hat_TE_ppc = p_hat_TE_ppc / n_TE;
+##     p_hat_WR_ppc = p_hat_WR_ppc / n_WR;
+##   }
+## }</code></pre>
+<p>The model is fit the same as before except the data provided are a little different. N_pos is the number of levels to the positions variable (pos). Position is converted to a numeric vector where 1 = QB, 2 = RB, 3 = TE, 4 = WR. I’m not sure if Stan would automatically coerce the factor into numeric or not. Otherwise, N and y are the same.</p>
+<pre class="r"><code>#Fit model with position variable
+data.list &lt;- list(N = nrow(inj.data), N_pos = 4, pos = as.numeric(factor(inj.data$pos)),
+                  y = inj.data$injured)
+
+fit2 &lt;- stan(file =&#39;code\\LR2.stan&#39;,
+            data = data.list)</code></pre>
+<p>The traceplots as well as the posterior predictive checks for each position are below.</p>
+<pre class="r"><code>#Diagnostics
+traceplot(fit2)</code></pre>
+<p><img src="/post/2018-04-15-predicting-nfl-injuries-with-stan_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre class="r"><code>#Posterior Samples
+params &lt;- extract(fit2)
+
+p_hat_ppc = data.frame(params)
+
+library(gridExtra)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;gridExtra&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     combine</code></pre>
+<pre class="r"><code>o &lt;- ggplot(p_hat_ppc, aes(p_hat_ppc)) + geom_histogram(binwidth = 1/100) +
+  geom_vline(aes(xintercept = OVERALL.mean, col = &quot;red&quot;)) + theme_bw()
+a &lt;- ggplot(p_hat_ppc, aes(p_hat_QB_ppc)) + geom_histogram(binwidth = 1/25) +
+  geom_vline(aes(xintercept = QB.mean, col = &quot;red&quot;)) + theme_bw()
+b &lt;- ggplot(p_hat_ppc, aes(p_hat_RB_ppc)) + geom_histogram(binwidth = 1/25) +
+  geom_vline(aes(xintercept = RB.mean, col = &quot;red&quot;)) + theme_bw()
+c &lt;- ggplot(p_hat_ppc, aes(p_hat_TE_ppc)) + geom_histogram(binwidth = 1/25) +
+  geom_vline(aes(xintercept = TE.mean, col = &quot;red&quot;)) + theme_bw()
+d &lt;- ggplot(p_hat_ppc, aes(p_hat_WR_ppc)) + geom_histogram(binwidth = 1/25) +
+  geom_vline(aes(xintercept = WR.mean, col = &quot;red&quot;)) + theme_bw()
+grid.arrange(o,a,b,c,d)</code></pre>
+<p><img src="/post/2018-04-15-predicting-nfl-injuries-with-stan_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
+<p>This model clearly improves the fit. Of course there must be more to the story than this. I hope to add more content to this post as I think more about the problem and the data I have available.</p>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdn.bootcss.com/highlight.js//highlight.min.js"></script>
+
+
+
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+

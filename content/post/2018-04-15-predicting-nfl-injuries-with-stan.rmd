@@ -1,0 +1,161 @@
+---
+title: Predicting NFL Injuries with Stan
+author: ~
+date: '2018-04-15'
+slug: predicting-nfl-injuries-with-stan
+categories: []
+tags: -NFL
+      -Stan
+      -Statistics
+---
+
+Yesterday I wrote a post using Stan to fit simple one parameter models. These are boring, but helpful for learning the basics. Today, I'd like to start building a series of increasingly complicated regression models. I have data on all the injuries that occured during the 2017 NFL (American Football) season, courtesy of [https://www.armchairanalysis.com/](https://www.armchairanalysis.com/). What I'd like to do is build a model to predict whether a player will have an injury, where I'm going to define injury as being listed  at game time as out, or on injured reserve (IR). I'm also going to restrict the analysis to a subset of positions: quarterbacks, running backs, tight ends, and wide receivers.
+
+##Creating the Analysis Data set
+The code below creates a data set for every player who played (took at least 1 snap) in 2017 containing information on whether the player was injured. Joining the tables was a bit tricky, so if you notice any issues please let me know. The four data sets I'm using (player, game, injury, offense) are from armchair analysis. I didn't display the code loading them. The final data set has the player position and an indicator variable for whether they were at injured (listed as out or IR at game time) anytime during the season.
+
+```{r, message = FALSE, warning = FALSE}
+#NFL Injury Data
+library(tidyverse)
+library(rstan)
+options(tibble.print_max = 100)
+```
+```{r, message = FALSE, echo = FALSE}
+player <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\PLAYER.csv")
+game <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\GAME.csv")
+injury <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\INJURY.csv")
+offense <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\OFFENSE.csv")
+```
+```{r}
+#1. all players who were injured
+#2. All players
+
+#players who had any injury indication in 2017
+inj.players <- game %>% filter(seas == 2017 & wk %in% c(1:17)) %>%
+  select(gid) %>% left_join(injury, by = c("gid" = "gid")) %>% select(player, gstat) %>%
+  mutate(injured = ifelse(gstat %in% c("IR", "Out"), 1, 0)) %>% group_by(player) %>%
+  summarize(games.inj = sum(injured)) %>% mutate(injured = ifelse(games.inj > 0, 1, 0)) %>%
+  left_join(player, by = c("player" = "player")) %>% select(player, pos1, games.inj, injured) 
+#All players who played an offensive snap in 2017
+all.players <- game %>% filter(seas == 2017 & wk %in% c(1:17)) %>%
+  select(gid) %>% left_join(offense, by = c("gid" = "gid")) %>%
+  select(player) %>% left_join(player, by = c("player" = "player")) %>%
+  select(player, pos1) %>% group_by(player) %>% distinct()
+#Join the two tables. Players who didn't get hurt will have missing values for injured
+inj.data <- all.players %>% full_join(inj.players, by = c("player" = "player")) %>%
+  mutate(pos = ifelse(is.na(pos1.x),pos1.y,pos1.x)) %>% 
+  ungroup() %>% select(pos,injured) %>%
+  filter(pos %in% c("QB","RB","TE","WR"))
+#missing values for injured indicator should be 0
+inj.data$injured[is.na(inj.data$injured)] <- 0
+
+inj.data
+
+```
+
+##Fitting an intercept only model
+Now that we have the data, I can fit a model. Normally I would do a little more exploratory analysis before moving to model fitting. The first model I'm going to fit is simply an intercept only logistic regression model. The prior on the intercept is a $normal(0,5)$. The Stan code for this model is printed below. The generated quantities block generates values for [posterior predictive checking](https://stats.stackexchange.com/questions/115157/what-are-posterior-predictive-checks-and-what-makes-them-useful). PPC involves comparing the posterior predictive distribution with the observed data, with the goal being to see whether there are issues with the model.  
+
+```{r, echo = FALSE}
+writeLines(readLines("C:\\Users\\rtravis\\Documents\\NFL\\scripts\\intercept_LR.stan"))
+```
+
+The function that fits the Stan model requires the data to be provided as a list.
+```{r, message = FALSE, warning = FALSE, results="hide", cache = TRUE}
+#Fit intercept only model in Stan
+#N is number of rows
+data.list <- list(N = nrow(inj.data), y = inj.data$injured)
+
+fit <- stan(file ='code\\intercept_LR.stan',
+            data = data.list)
+
+```
+
+We can visually inspect the trace plot to check the sampling behavior of the markov chains used to construct the posterior. You want to see a nice mixing behavior, like those we get.
+
+```{r}
+traceplot(fit)
+```
+
+Before I move on to interpreting the model, I want to make sure that it fits well via posterior predictive checks. If I plot a histogram of predictived values of y (probability of injury) and over lay a vertical line corresponding to the overall proportion of injuries, it seems like the model has a great fit. However, we also have information about player position. In the second plot I overlay vertical lines for the proportion of injuries for all four positions in addition to the overall injury rate.
+
+```{r}
+#Posterior Samples
+params <- extract(fit)
+#PPC
+p_hat_ppc = data.frame(p_hat_ppc = params$p_hat_ppc)
+OVERALL.mean <- mean(data.list$y)
+QB.mean <- mean(data.list$y[inj.data$pos == "QB"])
+RB.mean <- mean(data.list$y[inj.data$pos == "RB"])
+TE.mean <- mean(data.list$y[inj.data$pos == "TE"])
+WR.mean <- mean(data.list$y[inj.data$pos == "WR"])
+
+ggplot(p_hat_ppc, aes(p_hat_ppc)) + geom_histogram(binwidth = 1/100) +
+  geom_vline(aes(xintercept = OVERALL.mean, col = "black")) + theme_bw()
+
+
+ggplot(p_hat_ppc, aes(p_hat_ppc)) + geom_histogram(binwidth = 1/100) +
+  geom_vline(aes(xintercept = OVERALL.mean, col = "Overall")) +
+  geom_vline(aes(xintercept = QB.mean, col = "QB")) +
+  geom_vline(aes(xintercept = RB.mean, col = "RB")) +
+  geom_vline(aes(xintercept = TE.mean, col = "TE")) +
+  geom_vline(aes(xintercept = WR.mean, col = "WR")) +
+  scale_color_manual(name = "Position", 
+                     values = c(Overall = "black",
+                                QB = "red",
+                                RB = "blue",
+                                TE = "green",
+                                WR = "purple")) +
+  ggtitle("Posterior Predictive Distribution for Probability of Injury") +
+  theme_bw()
+
+```
+
+We can see from the second plot that the model would do very poorly for predicting quarterback injuries in particular. This suggests that a simple improvement to the model would be to include each players position.
+
+
+##Enriching the model with position information
+
+Fitting a model in Stan with this information is fairly straight forward, but a little tricky. The key thing here is that our unknown parameters are a vector. I parameterized the model as a "cell means" model, so there is not intercept, just a mean parameter indexed by the four positions. You'll notice that the generated quantities block is much longer now, since I had generate predictions for each position, as well as the overall. 
+```{r, echo = FALSE}
+writeLines(readLines("C:\\Users\\rtravis\\Documents\\NFL\\scripts\\LR2.stan"))
+```
+
+The model is fit the same as before except the data provided are a little different. N_pos is the number of levels to the positions variable (pos). Position is converted to a numeric vector where 1 = QB, 2 = RB, 3 = TE, 4 = WR. I'm not sure if Stan would automatically coerce the factor into numeric or not. Otherwise, N and y are the same. 
+```{r, message = FALSE, warning = FALSE, results="hide", cache = TRUE}
+#Fit model with position variable
+data.list <- list(N = nrow(inj.data), N_pos = 4, pos = as.numeric(factor(inj.data$pos)),
+                  y = inj.data$injured)
+
+fit2 <- stan(file ='code\\LR2.stan',
+            data = data.list)
+```
+
+The traceplots as well as the posterior predictive checks for each position are below. 
+
+```{r}
+#Diagnostics
+traceplot(fit2)
+
+#Posterior Samples
+params <- extract(fit2)
+
+p_hat_ppc = data.frame(params)
+
+library(gridExtra)
+o <- ggplot(p_hat_ppc, aes(p_hat_ppc)) + geom_histogram(binwidth = 1/100) +
+  geom_vline(aes(xintercept = OVERALL.mean, col = "red")) + theme_bw()
+a <- ggplot(p_hat_ppc, aes(p_hat_QB_ppc)) + geom_histogram(binwidth = 1/25) +
+  geom_vline(aes(xintercept = QB.mean, col = "red")) + theme_bw()
+b <- ggplot(p_hat_ppc, aes(p_hat_RB_ppc)) + geom_histogram(binwidth = 1/25) +
+  geom_vline(aes(xintercept = RB.mean, col = "red")) + theme_bw()
+c <- ggplot(p_hat_ppc, aes(p_hat_TE_ppc)) + geom_histogram(binwidth = 1/25) +
+  geom_vline(aes(xintercept = TE.mean, col = "red")) + theme_bw()
+d <- ggplot(p_hat_ppc, aes(p_hat_WR_ppc)) + geom_histogram(binwidth = 1/25) +
+  geom_vline(aes(xintercept = WR.mean, col = "red")) + theme_bw()
+grid.arrange(o,a,b,c,d)
+
+```
+
+
+This model clearly improves the fit. Of course there must be more to the story than this. I hope to add more content to this post as I think more about the problem and the data I have available.

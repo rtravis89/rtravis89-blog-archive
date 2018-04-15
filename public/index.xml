@@ -6,10 +6,19 @@
     <description>Recent content on Fledgling Statistician</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 14 Apr 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 15 Apr 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Predicting NFL Injuries with Stan</title>
+      <link>/post/predicting-nfl-injuries-with-stan/</link>
+      <pubDate>Sun, 15 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/predicting-nfl-injuries-with-stan/</guid>
+      <description>Yesterday I wrote a post using Stan to fit simple one parameter models. These are boring, but helpful for learning the basics. Today, I’d like to start building a series of increasingly complicated regression models. I have data on all the injuries that occured during the 2017 NFL (American Football) season, courtesy of https://www.armchairanalysis.com/. What I’d like to do is build a model to predict whether a player will have an injury, where I’m going to define injury as being listed at game time as out, or on injured reserve (IR).</description>
+    </item>
     
     <item>
       <title>Stan Basics</title>
