@@ -20,6 +20,8 @@
 
 
 
+<link href='//cdn.bootcss.com/highlight.js/9.11.0/styles/atom-one-dark.min.css' rel='stylesheet' type='text/css' />
+
 
 
 <link rel="stylesheet" href="/css/fonts.css" media="all">
@@ -249,7 +251,8 @@ ggplot(p_hat_ppc, aes(p_hat_ppc)) + geom_histogram(binwidth = 1/100) +
 ## }</code></pre>
 <p>The model is fit the same as before except the data provided are a little different. N_pos is the number of levels to the positions variable (pos). Position is converted to a numeric vector where 1 = QB, 2 = RB, 3 = TE, 4 = WR. I’m not sure if Stan would automatically coerce the factor into numeric or not. Otherwise, N and y are the same. I use the same prior as before, <span class="math inline">\(normal(0,5)\)</span>, for the position effects.</p>
 <pre class="r"><code>#Fit model with position variable
-data.list &lt;- list(N = nrow(inj.data), N_pos = 4, pos = as.numeric(factor(inj.data$pos)),
+data.list &lt;- list(N = nrow(inj.data), N_pos = 4,
+                  pos = as.numeric(factor(inj.data$pos)),
                   y = inj.data$injured)
 
 fit2 &lt;- stan(file =&#39;code\\LR2.stan&#39;,
@@ -337,10 +340,12 @@ grid.arrange(a,b,c,d)</code></pre>
 
 
 
-<script src="//cdn.bootcss.com/highlight.js//highlight.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.11.0/highlight.min.js"></script>
 
 
 
+<script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/yaml.min.js"></script>
 <script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
 
 

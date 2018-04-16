@@ -124,7 +124,8 @@ writeLines(readLines("C:\\Users\\rtravis\\Documents\\NFL\\scripts\\LR2.stan"))
 The model is fit the same as before except the data provided are a little different. N_pos is the number of levels to the positions variable (pos). Position is converted to a numeric vector where 1 = QB, 2 = RB, 3 = TE, 4 = WR. I'm not sure if Stan would automatically coerce the factor into numeric or not. Otherwise, N and y are the same. I use the same prior as before, $normal(0,5)$, for the position effects. 
 ```{r, message = FALSE, warning = FALSE, results="hide", cache = TRUE}
 #Fit model with position variable
-data.list <- list(N = nrow(inj.data), N_pos = 4, pos = as.numeric(factor(inj.data$pos)),
+data.list <- list(N = nrow(inj.data), N_pos = 4,
+                  pos = as.numeric(factor(inj.data$pos)),
                   y = inj.data$injured)
 
 fit2 <- stan(file ='code\\LR2.stan',
