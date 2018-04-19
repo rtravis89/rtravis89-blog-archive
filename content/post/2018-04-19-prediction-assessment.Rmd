@@ -1,0 +1,75 @@
+---
+title: Prediction Assessment for Binary Outcomes
+author: ~
+date: '2018-04-19'
+slug: prediction-assessment
+categories: []
+tags: -prediction
+      -statistics
+      -machine learning
+---
+
+Anyone trying to learn how to build and assess prediction models for binary outcomes is immediately swamped with a litany of strange sounding performance metrics. You might encounter: sensitivity, specificity, precision, recall, and accuracy, just to name a few. Fundamentally, all of the measures listed require the analyst to provide a category label for each element predicted. This is sometimes done automatically with an algorithm. Or if the output of the model is a probability, a cut off is chosen and all elements below the cut off are classified one way, and all those above the other way. Hence why these types of problems are often referred to as classification problems. But how to choose which one or more of these metrics and why? Instead of answering this question I'm going to argue that the question is misplaced. None of the metrics above is (solely or jointly) appropriate for model evaluation and that choosing a probability cutoff so as to optimize one or the other metric is often misguided. I'll argue instead that the assessment of binary prediction problems should rely on two measures of quality, discrimination and calibration, and that these measures are jointly considered by using what are called proper scoring rules.
+
+###Discrimination and Calibration
+
+In so called binary classification problems, the focus is primarily on discrimination. All of the measures previously listed, as well as other (better) measures like AUC (aka c-statistic), can be thought of as measures of discrimination. Discrimination measures compare the point (probability) estimates between classes. The more separation between the classes the better the discrimination. 
+
+Imagine you have observed whether an event occurs in 2000 thousand patients. It just so happens that the event occured in 1000 patients and did not occur in the other 1000. You're interested in predicting whether this event will occur in the future for unobserved patients, so you've build a prediction model. To get an idea of how well your model works you use it to assign a probability of the event occuring for all 2000 of the patients you've already observed. In terms of discrimination, what you would like is for the model to assign a higher probability to patients who in fact did have an event. If you wanted to visually compare these predicted probabilities, you could use plots like those below.
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+library(ggplot2)
+
+pred <- c(rnorm(1000, .4,.1),rnorm(1000, .6,.1))
+class <-c(rep("A",1000),rep("B",1000))
+df <- data.frame(pred, class)
+#Discrimination
+ggplot(df, aes(pred, col = class)) + geom_density() + theme_bw() +
+  xlab("Probability") + ggtitle("Good Discrimination")
+
+pred <- c(rnorm(1000, .4,.1),rnorm(1000, .45,.1))
+class <-c(rep("A",1000),rep("B",1000))
+df <- data.frame(pred, class)
+#Discrimination
+ggplot(df, aes(pred, col = class)) + geom_density() + theme_bw() +
+  xlab("Probability") + ggtitle("Poor Discrimination")
+```
+
+The first plot shows a cleaner separation between distributions of predictions and thus better discrimination. The second plot is labeled poor discrimination, but this is possibly a misnomer. Depending on the application, this might represent a valuable degree of separation. Probably the most common measure of discrimination is the area under the receiver operator curve (AUC), also referred to as the concordance probability (c-statistic or c-index). The "Good" plot above has an AUC of about .93, whereas the "Poor" plot has one of .64. If the two classes overlapped exactly, the AUC equals .5. In mathematical notation: $AUC = Pr(\pi_i > \pi_j) + 1/2 * Pr(\pi_i = \pi_j)$, where i is an event occurs and j is no event occurs. Measures of discrimination like AUC are maximized when there is no overlap in the distribution of predicted values. Thus, the distance between predictions is not of interest but rather the ordering along the x-axis.
+
+To take an extreme example, imagine giving a probability of .01 to all the patients that didn't experience an event and a probability of .02 to all the patients that did. This method has perfect discrimination but also the ludicrious interpretation that all patients have a risk of less than .02 even though 1/2 of all patients had an event. This suggests that what we'd like to have in addition to discrimination, is a measure of the accuracy of our probability predictions. This measure is referred to as calibration.
+
+Good calibration means that on average $\pi_i$ * 100 percent of events occur with predicted probability $\pi_i$. To give an example, 50% of the patients with predicted probability of .5 or less should have events. Ideally, this should hold for the entire range [0,1]. Thus, calibration makes use of the entire range of predictions and the uncertainty involved in each class prediction. There are quantitative measures of calibration, but it is most easily inspected by visualizing. This can be done by using a [loess smoother](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4793659/). Examples of good and poor calibration plots are shown below.
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+#Show calibration
+pr <- seq(.01,.99, length.out = 1000)
+y <- rbinom(10000,size = 1, prob = pr)
+
+ggplot(data.frame(y,pr), aes(x = pr,y=y)) + geom_smooth(method = "loess") + 
+  geom_abline(slope = 1, intercept = 0) + xlab("Predicted Probability") +
+  ylab("Observed Proportion") + ggtitle("Good Calibration") + ylim(0,1) + xlim(0,1) + theme_bw()
+
+pr <- pr + rnorm(10000,0,.3)
+pr[pr < 0] <- 0
+pr[pr > 1] <- 1
+
+ggplot(data.frame(y,pr), aes(x = pr,y=y)) + geom_smooth(method = "loess") + 
+  geom_abline(slope = 1, intercept = 0) + xlab("Predicted Probability") +
+  ylab("Observed Proportion") + ggtitle("Poor Calibration") + ylim(0,1) + xlim(0,1) + theme_bw()
+```
+
+###Scoring Rules
+
+Scoring rules assign a number to the predicted probability and the actual outcome such that a scoring rule is proper if the expected (average) score is optimized by the true data generating process. It is strictly proper if it is uniquely optimized by the true data generating process. To put it more plainly, the true probability model will provide the best value of the proper scoring rule (though there may be ties with other models), whereas the strictly proper scoring rule will give the best value to the true probability model and no other.
+
+Two strictly proper scoring rules relevant to binary outcome prediction are the [brier score](https://en.wikipedia.org/wiki/Scoring_rule#Brier/quadratic_scoring_rule) and [logarithmic scoring rule](https://en.wikipedia.org/wiki/Scoring_rule#Logarithmic_scoring_rule). The brier score measures the squared difference between the observed outcome and predicted probability, $$1/N \sum (y_i - \pi_i)^2$$. This measure is optimized at 0, representing perfect prediction. The Brier score is just the mean squared error metric applied to binary outcomes. The logarithmic score is $$\sum g_i * ln(\pi_i) + (1-g_i) * ln(\pi_i)$$, where $g_i$ is the true probability. The logarithmic score is related to the likelihood function for binary outcome models. The logarithmic rule gives more weight to extreme predictions (those  near 0 and 1) than the brier score. 
+
+The brier score in particular can be decomposed into direct measures of discrimination and calibration, see Spiegelhalter 1986 [https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.4780050506]
+
+###Classification via decision analytic measures
+
+
+###Resources
+[Nice discussion of classification and score rules by Frank Harrell](http://www.fharrell.com/post/class-damage/)
+
+The textbook [Applied Statistical Inference](https://www.amazon.com/Applied-Statistical-Inference-Likelihood-Bayes/dp/3642378862/ref=sr_1_1?ie=UTF8&qid=1524166718&sr=8-1&keywords=applied+statistical+inference+likelihood+and+bayes) by Leonhard Held has a really nice chapter on prediction assessment.
