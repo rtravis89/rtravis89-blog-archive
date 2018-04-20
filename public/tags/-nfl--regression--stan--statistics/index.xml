@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title> Nfl  Regression  Stan  Statistics on Fledgling Statistician</title>
+    <link>/tags/-nfl--regression--stan--statistics/</link>
+    <description>Recent content in  Nfl  Regression  Stan  Statistics on Fledgling Statistician</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 16 Apr 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/tags/-nfl--regression--stan--statistics/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Prediciting NFL Injuries with Stan Part II</title>
+      <link>/post/prediciting-nfl-injuries-with-stan-part-ii/</link>
+      <pubDate>Mon, 16 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/prediciting-nfl-injuries-with-stan-part-ii/</guid>
+      <description>Previously I built a simple model to predict whether an NFL player would have an injury based only on their position. I restricted the analysis to QBs, RBs, TEs, and WRs. In this post I’d like to expand the model to include all positions except kickers and long snappers, as well as include some additional covariates such as player height and weight.</description>
+    </item>
+    
+  </channel>
+</rss>

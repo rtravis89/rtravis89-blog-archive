@@ -6,10 +6,28 @@
     <description>Recent content on Fledgling Statistician</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 15 Apr 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 19 Apr 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Prediction Assessment with Scoring Rules</title>
+      <link>/post/prediction-assessment/</link>
+      <pubDate>Thu, 19 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/prediction-assessment/</guid>
+      <description>Anyone trying to learn how to build and assess prediction models is immediately swamped with a litany of strange sounding performance metrics. In the binary outcome case you might encounter: sensitivity, specificity, precision, recall, accuracy, just to name a few. Fundamentally, all of the measures listed require the analyst to provide a category label for each element predicted. This is sometimes provided automatically with an algorithm. Or if the output of the model is a probability, a cut off is chosen and all elements below the cut off are classified one way, and all those above the other way.</description>
+    </item>
+    
+    <item>
+      <title>Prediciting NFL Injuries with Stan Part II</title>
+      <link>/post/prediciting-nfl-injuries-with-stan-part-ii/</link>
+      <pubDate>Mon, 16 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/prediciting-nfl-injuries-with-stan-part-ii/</guid>
+      <description>Previously I built a simple model to predict whether an NFL player would have an injury based only on their position. I restricted the analysis to QBs, RBs, TEs, and WRs. In this post I’d like to expand the model to include all positions except kickers and long snappers, as well as include some additional covariates such as player height and weight.</description>
+    </item>
     
     <item>
       <title>Predicting NFL Injuries with Stan</title>

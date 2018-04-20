@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title> Prediction  Statistics  Machine Learning on Fledgling Statistician</title>
+    <link>/tags/-prediction--statistics--machine-learning/</link>
+    <description>Recent content in  Prediction  Statistics  Machine Learning on Fledgling Statistician</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 19 Apr 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/tags/-prediction--statistics--machine-learning/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Prediction Assessment with Scoring Rules</title>
+      <link>/post/prediction-assessment/</link>
+      <pubDate>Thu, 19 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/prediction-assessment/</guid>
+      <description>Anyone trying to learn how to build and assess prediction models is immediately swamped with a litany of strange sounding performance metrics. In the binary outcome case you might encounter: sensitivity, specificity, precision, recall, accuracy, just to name a few. Fundamentally, all of the measures listed require the analyst to provide a category label for each element predicted. This is sometimes provided automatically with an algorithm. Or if the output of the model is a probability, a cut off is chosen and all elements below the cut off are classified one way, and all those above the other way.</description>
+    </item>
+    
+  </channel>
+</rss>

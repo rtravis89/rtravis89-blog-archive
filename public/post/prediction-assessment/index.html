@@ -1,17 +1,77 @@
----
-title: Prediction Assessment with Scoring Rules
-author: ~
-date: '2018-04-19'
-slug: prediction-assessment
-categories: []
-tags: -prediction
-      -statistics
-      -machine learning
----
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.32.2" />
+
+
+<title>Prediction Assessment with Scoring Rules - Fledgling Statistician</title>
+<meta property="og:title" content="Prediction Assessment with Scoring Rules - Fledgling Statistician">
 
 
 
-<p>Anyone trying to learn how to build and assess prediction models is immediately swamped with a litany of strange sounding performance metrics. In the binary outcome case you might encounter: sensitivity, specificity, precision, recall, accuracy, just to name a few. Fundamentally, all of the measures listed require the analyst to provide a category label for each element predicted. This is sometimes provided automatically with an algorithm. Or if the output of the model is a probability, a cut off is chosen and all elements below the cut off are classified one way, and all those above the other way. The probability cutoff that maximizes one or the other metric is then chosen. But how to choose which one or more of these metrics and why?</p>
+  
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+<link rel="stylesheet" href="/css/atom-one-dark-gist.css" rel="stylesheet" id="theme-stylesheet">
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/%3cnil%3e"
+         width=""
+         height=""
+         alt="">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rtravis89">GitHub</a></li>
+    
+    <li><a href="https://www.linkedin.com/in/rtravis89">LinkedIn</a></li>
+    
+    <li><a href="/post">Posts</a></li>
+    
+    <li><a href="https://twitter.com/fledglingstat">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">6 min read</span>
+    
+
+    <h1 class="article-title">Prediction Assessment with Scoring Rules</h1>
+
+    
+    <span class="article-date">2018/04/19</span>
+    
+
+    <div class="article-content">
+      <p>Anyone trying to learn how to build and assess prediction models is immediately swamped with a litany of strange sounding performance metrics. In the binary outcome case you might encounter: sensitivity, specificity, precision, recall, accuracy, just to name a few. Fundamentally, all of the measures listed require the analyst to provide a category label for each element predicted. This is sometimes provided automatically with an algorithm. Or if the output of the model is a probability, a cut off is chosen and all elements below the cut off are classified one way, and all those above the other way. The probability cutoff that maximizes one or the other metric is then chosen. But how to choose which one or more of these metrics and why?</p>
 <p>Instead of answering this question I’m going to argue that the question is misplaced. None of the metrics above is (solely or jointly) appropriate for model evaluation and that choosing a probability cutoff so as to optimize one or the other metric is often misguided. I’ll argue instead that the assessment of prediction methods should rely on (at least) two measures of quality, discrimination and calibration, and that these measures are jointly considered by using what are called proper scoring rules. Importantly, good performance on both metrics does not imply the model is <a href="https://www.ncbi.nlm.nih.gov/pubmed/12012295">useful</a>. For the sake of simplicity, I’m only going to cover the binary outcome case though the conclusions can be extended to any outcome. In the event that a yes/no or class label decision is required, since probabilities can be difficult to work with and require judgement, the cutoff(s) should be chosen based on the relative costs and benefits of applying the separate labels. This is fundamentally a decision theory problem outside the scope of this post.</p>
 <div id="discrimination-and-calibration" class="section level3">
 <h3>Discrimination and Calibration</h3>
@@ -34,3 +94,35 @@ tags: -prediction
 <p><a href="https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.4780050506">Spiegelhalter 1986</a></p>
 <p>Stack Exchange has some really nice posts <a href="https://stats.stackexchange.com/a/312787">1</a> <a href="https://stats.stackexchange.com/questions/214024/is-the-following-a-proper-scoring-rule">2</a></p>
 </div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+
