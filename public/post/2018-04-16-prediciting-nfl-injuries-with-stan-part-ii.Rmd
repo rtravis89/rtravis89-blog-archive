@@ -25,12 +25,11 @@ library(tidyverse)
 library(brms)
 theme_set(theme_bw())
 options(tibble.print_max = 100, tibble.print_min = 10)
-setwd("C:\\Users\\rtravis\\Documents\\NFL\\scripts")
 
-player <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\PLAYER.csv")
-game <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\GAME.csv")
-injury <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\INJURY.csv")
-offense <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\OFFENSE.csv")
+player <- read_csv("C:\\Users\\ryan\\Documents\\NFL\\nfl_00-17\\PLAYER.csv")
+game <- read_csv("C:\\Users\\ryan\\Documents\\NFL\\nfl_00-17\\GAME.csv")
+injury <- read_csv("C:\\Users\\ryan\\Documents\\NFL\\nfl_00-17\\INJURY.csv")
+offense <- read_csv("C:\\Users\\ryan\\Documents\\NFL\\nfl_00-17\\OFFENSE.csv")
 
 ```
 
@@ -181,12 +180,13 @@ The last graph really sticks out to me. I see no reason for there to be a substa
 
 The first model I'm going to fit is a zero inflated poisson. This model is a mixture of two models. A binomial model that estimates the probability of missing zero games and a separate poisson model to estimate the number of games missed. Zeros can then be produced by both processes. The binomial model only uses year and position to estimate the probability of zero. The poisson model uses zero, position, player height, weight, and age. Additionally, the poisson model has a random intercept for each player to account for the correlation across years. Simple mathematical representations of the models are presented below.
 $$Y \sim ZIPoisson(p_i, \lambda_i) $$
-$$logit(z_i) \sim \alpha_z + \alpha_{player_z} + \beta_z*X $$
-$$log(\lambda_i) \sim \alpha_\lambda  + \beta_\lambda*X $$
+$$logit(p_i) \sim \alpha_p + \beta_p*X $$
+$$log(\lambda_i) \sim \alpha_\lambda  + \alpha_{player_p} + \beta_\lambda*X $$
 $$\alpha_{\lambda} \sim Normal(0,100)$$
 $$\alpha_z \sim Logistic(0,1)$$
 $$\beta_\lambda, \beta_z \sim Normal(0,1) $$
-$$sd_z \sim Cauchy(0,2)$$
+$$\alpha_{player_\lambda} \sim Normal(0,sd_\lambda)$$
+$$sd_\lambda \sim Cauchy(0,2)$$
 ```{r, message = FALSE, warning = FALSE, cache = TRUE}
 
 fit0 <- brm(bf(games.inj ~ year + pos1 + height + weight + age + (1|player),

@@ -120,9 +120,9 @@ full.data &lt;-
   select(year,player,pname,pos1,height,weight,dob,start,injured) %&gt;%
   filter(pos1 %in% c(&quot;QB&quot;,&quot;RB&quot;,&quot;TE&quot;,&quot;WR&quot;)) %&gt;%
   group_by(year,player,pname,pos1,height,weight,dob,start) %&gt;%
-  summarize(games.inj = sum(injured)) %&gt;% unique()
-
-#Age variable
+  summarize(games.inj = sum(injured)) %&gt;% unique()</code></pre>
+<pre><code>## Warning: package &#39;bindrcpp&#39; was built under R version 3.4.4</code></pre>
+<pre class="r"><code>#Age variable
 full.data$age &lt;- full.data$year - lubridate::year(as.Date(full.data$dob, &quot;%m/%d/%Y&quot;))</code></pre>
 <p>The table I’ll use for analysis is printed here.</p>
 <pre class="r"><code>full.data</code></pre>
@@ -181,13 +181,13 @@ full.data$age &lt;- full.data$year - lubridate::year(as.Date(full.data$dob, &quo
 ##  3rd Qu.:236                      3rd Qu.:2015   3rd Qu.: 1.000  
 ##  Max.   :283                      Max.   :2017   Max.   :16.000  
 ##                                                                  
-##       age       
-##  Min.   :17.00  
-##  1st Qu.:24.00  
-##  Median :25.00  
-##  Mean   :26.19  
-##  3rd Qu.:28.00  
-##  Max.   :58.00  
+##       age      
+##  Min.   :20.0  
+##  1st Qu.:24.0  
+##  Median :25.0  
+##  Mean   :26.2  
+##  3rd Qu.:28.0  
+##  Max.   :58.0  
 ##  NA&#39;s   :3</code></pre>
 <p>From examining the table, a few things immediately pop out. The max age is 58 years old! And someone has 1994 listed as the year they entered the league. I’ll spare you the boring details, but essentially several new players share names with previous players and some how their information has gotten mixed up. For instance this profile on <a href="http://www.nfl.com/player/georgefarmer/2513838/profile">NFL.com</a> for WR George Farmer (the culprit in our data set) has his age listed as 59 years old. The player in our data set is also listed as a WR. I updated the data set to reflect what I think are the correct values, 24 year old running back. The ages are missing for 3 players as well. They all recently entered the league, so I simply assume they are 23 years old.</p>
 <p>There is also a Charles Johnson, WR, who was born 1972. I’m pretty sure this is actually a player who was born in 1989 and now plays for the jets and not the Charles Johnson that won a superbowl with the Patriots in the early 2000s. Another WR name Trevor Davis also had an incorrect age. I manually corrected these records.</p>
@@ -221,7 +221,7 @@ full.data %&gt;% group_by(year) %&gt;% summarize(total = sum(games.inj)) %&gt;%
 <h3>Statistical Modeling</h3>
 <div id="zero-inflated-poisson" class="section level4">
 <h4>Zero Inflated Poisson</h4>
-<p>The first model I’m going to fit is a zero inflated poisson. This model is a mixture of two models. A binomial model that estimates the probability of missing zero games and a separate poisson model to estimate the number of games missed. Zeros can then be produced by both processes. The binomial model only uses year and position to estimate the probability of zero. The poisson model uses zero, position, player height, weight, and age. Additionally, the poisson model has a random intercept for each player to account for the correlation across years. Simple mathematical representations of the models are presented below. <span class="math display">\[Y \sim ZIPoisson(p_i, \lambda_i) \]</span> <span class="math display">\[logit(z_i) \sim \alpha_z + \alpha_{player_z} + \beta_z*X \]</span> <span class="math display">\[log(\lambda_i) \sim \alpha_\lambda  + \beta_\lambda*X \]</span> <span class="math display">\[\alpha_{\lambda} \sim Normal(0,100)\]</span> <span class="math display">\[\alpha_z \sim Logistic(0,1)\]</span> <span class="math display">\[\beta_\lambda, \beta_z \sim Normal(0,1) \]</span> <span class="math display">\[sd_z \sim Cauchy(0,2)\]</span></p>
+<p>The first model I’m going to fit is a zero inflated poisson. This model is a mixture of two models. A binomial model that estimates the probability of missing zero games and a separate poisson model to estimate the number of games missed. Zeros can then be produced by both processes. The binomial model only uses year and position to estimate the probability of zero. The poisson model uses zero, position, player height, weight, and age. Additionally, the poisson model has a random intercept for each player to account for the correlation across years. Simple mathematical representations of the models are presented below. <span class="math display">\[Y \sim ZIPoisson(p_i, \lambda_i) \]</span> <span class="math display">\[logit(p_i) \sim \alpha_p + \beta_p*X \]</span> <span class="math display">\[log(\lambda_i) \sim \alpha_\lambda  + \alpha_{player_p} + \beta_\lambda*X \]</span> <span class="math display">\[\alpha_{\lambda} \sim Normal(0,100)\]</span> <span class="math display">\[\alpha_z \sim Logistic(0,1)\]</span> <span class="math display">\[\beta_\lambda, \beta_z \sim Normal(0,1) \]</span> <span class="math display">\[\alpha_{player_\lambda} \sim Normal(0,sd_\lambda)\]</span> <span class="math display">\[sd_\lambda \sim Cauchy(0,2)\]</span></p>
 <pre class="r"><code>fit0 &lt;- brm(bf(games.inj ~ year + pos1 + height + weight + age + (1|player),
                zi ~ year + pos1),
             data = full.data, family = zero_inflated_poisson(link = &quot;log&quot;),
