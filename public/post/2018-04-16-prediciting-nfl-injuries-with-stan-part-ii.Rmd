@@ -247,4 +247,5 @@ LOO(fit0, fit1)
 ```
 
 Based on the leave-one-out cross validation the zero-one beta regression provides a better fit. Like I said above, this is likely due to the improved fit in the tails, but at the cost of worse fit in between. 
+
 ###Simulation
