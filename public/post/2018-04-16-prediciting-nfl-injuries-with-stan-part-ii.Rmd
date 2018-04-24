@@ -1,13 +1,250 @@
 ---
 title: Prediciting NFL Injuries with Stan Part II
 author: ~
-date: '2018-04-16'
+date: '2018-04-22'
 slug: prediciting-nfl-injuries-with-stan-part-ii
 categories: []
 tags: -NFL
       -Regression
       -Stan
       -Statistics
+      -brms
 ---
 
-[Previously](http://ryantravis.netlify.com/post/stan-basics/) I built a simple model to predict whether an NFL player would have an injury based only on their position. I restricted the analysis to QBs, RBs, TEs, and WRs. In this post I'd like to expand the model to include all positions except kickers and long snappers, as well as include some additional covariates such as player height and weight. 
+[Previously](http://ryantravis.netlify.com/post/stan-basics/) I use data from armchair analysis to build a simple model to predict whether an NFL player would have an injury based only on their position. I restricted the analysis to QBs, RBs, TEs, and WRs. In this post I'd like to expand the model to include 3 years of injury data (which is all I have), as well as include some additional covariates such as player height, weight, and age. The inclusion of multiple years of data makes building the model more tricky since some players will be included in each years' data. 
+
+Additionally, I thought it would be more interesting to predict the number of games in a season a player is unable to play due to injury. A common model for counts is the poisson model. This model has a single parameter for its mean and variance, and so is not very flexible. It's easy to imagine two simple processes by which a player can remain injury free all year. The first is they are simply lucky and don't get hurt. The other is that they don't play very much. Since there are (at least) two processes that can produce zeros for the number of games a player misses, I'm confident that there will be greater than expected number of zeros. Therefore it makes sense to include an additional parameter to account for this in the model.
+
+To simplify the coding I'm going to use the excellent [brms](https://cran.r-project.org/web/packages/brms/index.html) package in R. This package allows you to fit models in Stan using standard R formula syntax. It'll also be helpful since it allows the use of splines to model potentially nonlinear predictors like height, weight, and age. Additionally, brms provides a ton of other functionality I'll use. This post will be more involved than the previous one and so I've tried to split it into four sections: data pre-processing, exploratory analysis, statistical modeling, model comparison, and finally a simple simulation using the model.  
+
+###Data Pre-Processing
+The data for this analysis are different than the previous post primarily in two ways. The first is that it includes multiple years. This means that I will have more than one record (row) for players that played multiple years. The second is that I'm looking at the number of games missed due to injury. I'm defining an injury here as having a game time status of: out, physically unable to perform, or Injured Reserve. So essentially what I would like is a record for each year and each player with a number between 0 and 16 for games injured. The first 10 rows of the tables that need to be joined are printed below:
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(brms)
+theme_set(theme_bw())
+options(tibble.print_max = 100, tibble.print_min = 10)
+setwd("C:\\Users\\rtravis\\Documents\\NFL\\scripts")
+
+player <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\PLAYER.csv")
+game <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\GAME.csv")
+injury <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\INJURY.csv")
+offense <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\OFFENSE.csv")
+
+```
+
+```{r}
+player
+game
+injury
+offense
+
+```
+
+
+I join the tables using dplyr functions from the tidyverse package. In addition to the year, player, and number of games injured, I also get player name, weight, height, date of birth, as well as the year they entered the league (start).
+
+```{r}
+#All games from 2015-2017
+player.data <-
+  data_frame(year = rep(2015:2017, each = 17),
+                        wk = rep(1L:17L, times = 3)) %>%
+  #Add game ids
+  left_join(game %>% select(gid, seas, wk),
+                        by = c("year" = "seas",
+                               "wk" = "wk")) %>%
+  #Add players with offense stats recorded in those years
+  left_join(offense %>% select(gid,player), by = c("gid" = "gid")) %>%
+  left_join(player %>% select(player,pname,pos1,height,weight,dob,start),
+            by = c("player" = "player")) 
+#add injuries
+injury.data <-
+  data_frame(year = rep(2015:2017, each = 17),
+             wk = rep(1L:17L, times = 3)) %>%
+  #Add game ids
+  left_join(game %>% select(gid, seas, wk),
+            by = c("year" = "seas",
+                   "wk" = "wk")) %>%
+  left_join(injury %>% select(gid, player, gstat),
+            by = c("gid" = "gid")) %>%
+  left_join(player %>% select(player,pname,pos1,height,weight,dob,start),
+            by = c("player" = "player")) %>%
+  select(year,wk,gid,player,pos1,pname,height,weight,dob,start,gstat)
+#Full data
+full.data <-
+  player.data %>% bind_rows(injury.data) %>%
+  mutate(injured = ifelse(gstat %in% c("Out","IR","Pup","PUP", "Out\r"),1L,0L)) %>%
+  select(year,player,pname,pos1,height,weight,dob,start,injured) %>%
+  filter(pos1 %in% c("QB","RB","TE","WR")) %>%
+  group_by(year,player,pname,pos1,height,weight,dob,start) %>%
+  summarize(games.inj = sum(injured)) %>% unique()
+
+#Age variable
+full.data$age <- full.data$year - lubridate::year(as.Date(full.data$dob, "%m/%d/%Y"))
+
+```
+
+The table I'll use for analysis is printed here.
+```{r}
+full.data
+```
+
+Before modeling the data, it's always good to do some quality checks. Exploratory analysis can be very helpful in this regard since it can help identify irregularities and other issues with the data. Prior knowledge can be helpful here as well. For instance I know how many games some of my favorite players have missed in the last three seasons and I can use that as a standard to check the data against.
+
+Le'veon Bell is one of my favorite players (I'm of course a Steelers fan) and I know that he hurt his knee is 2015 and missed most of the season. Let's check the data set I created to make sure it contains this information. Bell's player unique player id in this data set is "LB-0250". We can select only the rows with his id by using the filter function from dplyr.
+
+```{r}
+filter(full.data, player == "LB-0250")
+
+```
+
+Well that's not good. The data set says Bell didn't miss any games in 2015, even though we know he did. Before rechecking the code I used to join the tables, let's look at the entries for Bell in the full injury data set. If it's missing there then the data I have is simply incomplete.
+
+```{r}
+filter(injury, player == "LB-0250")
+
+```
+
+It looks like the raw data simply doesn't have the information recorded! There must be something going on then with how the injury data was recorded. There are other omissions in the raw injury data set that I discovered as well. It would be too time consuming to fix all of them, so I'm simply going to proceed with the analysis, however this means anything that follows is obviously suspect.
+
+###Exploratory Analysis
+
+Simple summaries are an effective way of exploring your data and can help diagnose potential issues. A simple summary table of the data is printed below.
+
+```{r, echo = FALSE}
+full.data$player <- factor(full.data$player)
+full.data$pos1 <- factor(full.data$pos1)
+
+```
+
+```{r}
+summary(full.data)
+```
+
+From examining the table, a few things immediately pop out. The max age is 58 years old! And someone has 1994 listed as the year they entered the league. I'll spare you the boring details, but essentially several new players share names with previous players and some how their information has gotten mixed up. For instance this profile on  [NFL.com](http://www.nfl.com/player/georgefarmer/2513838/profile) for WR George Farmer (the culprit in our data set) has his age listed as 59 years old. The player in our data set is also listed as a WR. I updated the data set to reflect what I think are the correct values, 24 year old running back. The ages are missing for 3 players as well. They all recently entered the league, so I simply assume they are 23 years old. 
+
+There is also a Charles Johnson, WR, who was born 1972. I'm pretty sure this is actually a player who was born in 1989 and now plays for the jets and not the Charles Johnson that won a superbowl with the Patriots in the early 2000s. Another WR name Trevor Davis also had an incorrect age. I manually corrected these records. 
+
+```{r, echo = FALSE}
+full.data[which(is.na(full.data$age)),"age"] <- 23
+
+#Max age is 58, clearly wrong
+#George Farmer: NFL.com pulling age from the wrong player
+#Running back is the correct player I think
+#Actual age is 24 and RB
+full.data[which(full.data$age == 58),c("pos1")] <- c('RB')
+full.data[which(full.data$age == 58),c("age")] <- c(24)
+
+#L.Webster: LW-0800, age is 47. Clearly wrong
+#Correct age 28, start year 2014
+full.data[which(full.data$age == 47),"start"] <- 2014
+full.data[which(full.data$age == 47),"age"] <- 28
+
+full.data[full.data$player == "CJ-1400","age"] <- 29
+full.data[full.data$player == "TD-0600","age"] <- 24
+```
+
+Simple plots should help to identify if there are any other data issues. I produce several plots below.
+
+```{r}
+####Exploratory Analysis####
+full.data %>% group_by(games.inj) %>%
+  summarize(FREQ = n()) %>%
+  ggplot(aes(x = games.inj, y = FREQ)) + geom_point()
+
+full.data %>% group_by(games.inj, pos1) %>%
+  summarize(FREQ = n()) %>%
+  ggplot(aes(x = games.inj, y = FREQ, col = pos1)) + geom_point()
+
+full.data %>% group_by(pos1) %>% mutate(total_pos = n()) %>%
+  ungroup() %>% group_by(games.inj, pos1) %>%
+  mutate(FREQ = n(),
+         proportion = FREQ/total_pos) %>%
+  ggplot(aes(x = games.inj, y = proportion, col = pos1)) + geom_line()
+
+full.data %>% group_by(year,games.inj,pos1) %>%
+  ggplot(aes(pos1, games.inj)) + geom_boxplot() + facet_wrap( ~ year)
+
+#Injuries by year
+#Vast majority of injuries occur in 2017
+full.data %>% group_by(year) %>% summarize(total = sum(games.inj)) %>%
+  ggplot(aes(y = total, x = year)) + geom_point()
+
+```
+
+The last graph really sticks out to me. I see no reason for there to be a substantial differences in the number of injuries from 2015 to 2017. My guess is that the veracity of the data declines from 2017 backward. This coheres with the missing injury checks above. The years I found missing injuries were from either 2015 or 2016. I think this implies that I should only model the 2017 data. I'm going to ignore this sound advice simply because I want to get some practice fitting complex models with brms, but all the results should be taken with a grain of salt (or maybe an entire shaker).
+
+###Statistical Modeling
+
+####Zero Inflated Poisson
+
+The first model I'm going to fit is a zero inflated poisson. This model is a mixture of two models. A binomial model that estimates the probability of missing zero games and a separate poisson model to estimate the number of games missed. Zeros can then be produced by both processes. The binomial model only uses year and position to estimate the probability of zero. The poisson model uses zero, position, player height, weight, and age. Additionally, the poisson model has a random intercept for each player to account for the correlation across years. Simple mathematical representations of the models are presented below.
+$$Y \sim ZIPoisson(p_i, \lambda_i) $$
+$$logit(z_i) \sim \alpha_z + \alpha_{player_z} + \beta_z*X $$
+$$log(\lambda_i) \sim \alpha_\lambda  + \beta_\lambda*X $$
+$$\alpha_{\lambda} \sim Normal(0,100)$$
+$$\alpha_z \sim Logistic(0,1)$$
+$$\beta_\lambda, \beta_z \sim Normal(0,1) $$
+$$sd_z \sim Cauchy(0,2)$$
+```{r, message = FALSE, warning = FALSE, cache = TRUE}
+
+fit0 <- brm(bf(games.inj ~ year + pos1 + height + weight + age + (1|player),
+               zi ~ year + pos1),
+            data = full.data, family = zero_inflated_poisson(link = "log"),
+            prior = c(set_prior("normal(0,100)", class = "Intercept"),
+                      set_prior("logistic(0,1)", class = "Intercept", dpar = "zi"),
+                      set_prior("normal(0,1)", class = "b"),
+                      set_prior("cauchy(0,2)", class = "sd")),
+            cores = 4)
+summary(fit0)
+
+```
+
+
+####Posterior Predictive Checks
+
+```{r}
+pp_check(fit0, nsamples = 20) + xlim(c(0,16))
+pp_check(fit0, nsamples = 20, type = "ecdf_overlay")
+
+```
+
+The zero inflated poisson model seems to fit the data fairly well except for those players who missed 16 games. It's conceivable that there is a third process at work which determines whether a player will miss 16 games, namely that they suffer a season ending injury in the off-season or pre-season. Stan would allow us to create a mixture distribution like the zero inflated poisson. 
+
+For simplicity (i.e. I'm lazy) I'm instead going to devide the number of games missed by 16, which transforms the outcome into the proportion of games missed out of 16. This allows us to fit a zero-one inflated beta regression. This model is a mixture distribution like the zero inflated poisson, except there are now two binomial processes that account for the values 0 and 1. The beta distribution is then used as the model for all values inbetween. One big issue with this model is that it's continuously valued between the [0,1] interval, where as our data was originally integers. 
+
+
+####Zero-One Inflated Beta 
+
+```{r, message = FALSE, warning = FALSE, cache = TRUE}
+#zero-one inflated beta
+full.data$prop.inj <- full.data$games.inj/16
+
+fit1 <- brm(bf(prop.inj ~ year + pos1 + height + weight + age + (1|player),
+               coi ~ year + pos1,
+               zoi ~ year),
+            data = full.data, family = zero_one_inflated_beta(),
+            prior = c(set_prior("normal(0,100)", class = "Intercept"),
+                      set_prior("logistic(0,1)", class = "Intercept", dpar = "zoi"),
+                      set_prior("logistic(0,1)", class = "Intercept", dpar = "coi"),
+                      set_prior("normal(0,1)", class = "b"),
+                      set_prior("cauchy(0,2)", class = "sd")),
+            cores = 4)
+summary(fit1)
+```
+####Posterior Predictive Checks
+```{r}
+pp_check(fit1, nsamples = 20)
+pp_check(fit1, nsamples = 20, type = "ecdf_overlay")
+```
+
+We can see from the plots above that the zero one inflated beta model fits the tails well, but does a poor job inbetween. Since about 70% of the data is either a 0 or a 16, the improved fit in the tails will likely improve the model performance overall. We can compare the two models using the LOO function, which performs approximate leave-one-out cross-validation.
+
+###Comparison
+```{r}
+LOO(fit0, fit1)
+```
+
+Based on the leave-one-out cross validation the zero-one beta regression provides a better fit. Like I said above, this is likely due to the improved fit in the tails, but at the cost of worse fit in between. 
+###Simulation

@@ -15,7 +15,7 @@ tags: -NFL
 
 Additionally, I thought it would be more interesting to predict the number of games in a season a player is unable to play due to injury. A common model for counts is the poisson model. This model has a single parameter for its mean and variance, and so is not very flexible. It's easy to imagine two simple processes by which a player can remain injury free all year. The first is they are simply lucky and don't get hurt. The other is that they don't play very much. Since there are (at least) two processes that can produce zeros for the number of games a player misses, I'm confident that there will be greater than expected number of zeros. Therefore it makes sense to include an additional parameter to account for this in the model.
 
-To simplify the coding I'm going to use the excellent [brms](https://cran.r-project.org/web/packages/brms/index.html) package in R. This package allows you to fit models in Stan using standard R formula syntax. It'll also be helpful since it allows the use of splines to model potentially nonlinear predictors like height, weight, and age. Additionally, brms provides a ton of other functionality I'll use. This post will be more involved than the previous one and so I've tried to split it into four sections: data pre-processing, exploratory analysis, statistical modeling, and finally the results.  
+To simplify the coding I'm going to use the excellent [brms](https://cran.r-project.org/web/packages/brms/index.html) package in R. This package allows you to fit models in Stan using standard R formula syntax. It'll also be helpful since it allows the use of splines to model potentially nonlinear predictors like height, weight, and age. Additionally, brms provides a ton of other functionality I'll use. This post will be more involved than the previous one and so I've tried to split it into four sections: data pre-processing, exploratory analysis, statistical modeling, model comparison, and finally a simple simulation using the model.  
 
 ###Data Pre-Processing
 The data for this analysis are different than the previous post primarily in two ways. The first is that it includes multiple years. This means that I will have more than one record (row) for players that played multiple years. The second is that I'm looking at the number of games missed due to injury. I'm defining an injury here as having a game time status of: out, physically unable to perform, or Injured Reserve. So essentially what I would like is a record for each year and each player with a number between 0 and 16 for games injured. The first 10 rows of the tables that need to be joined are printed below:
@@ -177,16 +177,75 @@ The last graph really sticks out to me. I see no reason for there to be a substa
 
 ###Statistical Modeling
 
-The first model I'm going to fit is a zero inflated poisson with a varying intercept by player (to account for the correlation across years). 
+####Zero Inflated Poisson
+
+The first model I'm going to fit is a zero inflated poisson. This model is a mixture of two models. A binomial model that estimates the probability of missing zero games and a separate poisson model to estimate the number of games missed. Zeros can then be produced by both processes. The binomial model only uses year and position to estimate the probability of zero. The poisson model uses zero, position, player height, weight, and age. Additionally, the poisson model has a random intercept for each player to account for the correlation across years. Simple mathematical representations of the models are presented below.
 $$Y \sim ZIPoisson(p_i, \lambda_i) $$
 $$logit(z_i) \sim \alpha_z + \alpha_{player_z} + \beta_z*X $$
-$$log(\lambda_i) \sim \alpha_\lambda + \alpha_{player_\lambda} + \beta_\lambda*X $$
+$$log(\lambda_i) \sim \alpha_\lambda  + \beta_\lambda*X $$
+$$\alpha_{\lambda} \sim Normal(0,100)$$
+$$\alpha_z \sim Logistic(0,1)$$
+$$\beta_\lambda, \beta_z \sim Normal(0,1) $$
+$$sd_z \sim Cauchy(0,2)$$
 ```{r, message = FALSE, warning = FALSE, cache = TRUE}
+
 fit0 <- brm(bf(games.inj ~ year + pos1 + height + weight + age + (1|player),
-               zi ~ year + pos1 + height + weight + age + (1|player)),
+               zi ~ year + pos1),
             data = full.data, family = zero_inflated_poisson(link = "log"),
+            prior = c(set_prior("normal(0,100)", class = "Intercept"),
+                      set_prior("logistic(0,1)", class = "Intercept", dpar = "zi"),
+                      set_prior("normal(0,1)", class = "b"),
+                      set_prior("cauchy(0,2)", class = "sd")),
             cores = 4)
+summary(fit0)
 
 ```
 
-###Results
+
+####Posterior Predictive Checks
+
+```{r}
+pp_check(fit0, nsamples = 20) + xlim(c(0,16))
+pp_check(fit0, nsamples = 20, type = "ecdf_overlay")
+
+```
+
+The zero inflated poisson model seems to fit the data fairly well except for those players who missed 16 games. It's conceivable that there is a third process at work which determines whether a player will miss 16 games, namely that they suffer a season ending injury in the off-season or pre-season. Stan would allow us to create a mixture distribution like the zero inflated poisson. 
+
+For simplicity (i.e. I'm lazy) I'm instead going to devide the number of games missed by 16, which transforms the outcome into the proportion of games missed out of 16. This allows us to fit a zero-one inflated beta regression. This model is a mixture distribution like the zero inflated poisson, except there are now two binomial processes that account for the values 0 and 1. The beta distribution is then used as the model for all values inbetween. One big issue with this model is that it's continuously valued between the [0,1] interval, where as our data was originally integers. 
+
+
+####Zero-One Inflated Beta 
+
+```{r, message = FALSE, warning = FALSE, cache = TRUE}
+#zero-one inflated beta
+full.data$prop.inj <- full.data$games.inj/16
+
+fit1 <- brm(bf(prop.inj ~ year + pos1 + height + weight + age + (1|player),
+               coi ~ year + pos1,
+               zoi ~ year),
+            data = full.data, family = zero_one_inflated_beta(),
+            prior = c(set_prior("normal(0,100)", class = "Intercept"),
+                      set_prior("logistic(0,1)", class = "Intercept", dpar = "zoi"),
+                      set_prior("logistic(0,1)", class = "Intercept", dpar = "coi"),
+                      set_prior("normal(0,1)", class = "b"),
+                      set_prior("cauchy(0,2)", class = "sd")),
+            cores = 4)
+summary(fit1)
+```
+####Posterior Predictive Checks
+```{r}
+pp_check(fit1, nsamples = 20)
+pp_check(fit1, nsamples = 20, type = "ecdf_overlay")
+```
+
+We can see from the plots above that the zero one inflated beta model fits the tails well, but does a poor job inbetween. Since about 70% of the data is either a 0 or a 16, the improved fit in the tails will likely improve the model performance overall. We can compare the two models using the LOO function, which performs approximate leave-one-out cross-validation.
+
+###Comparison
+```{r}
+LOO(fit0, fit1)
+```
+
+Based on the leave-one-out cross validation the zero-one beta regression provides a better fit. Like I said above, this is likely due to the improved fit in the tails, but at the cost of worse fit in between. 
+
+###Simulation
