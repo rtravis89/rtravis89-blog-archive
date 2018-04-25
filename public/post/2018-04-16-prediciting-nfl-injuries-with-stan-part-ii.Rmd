@@ -1,5 +1,5 @@
 ---
-title: Prediciting NFL Injuries with Stan Part II
+title: Predicting NFL Injuries with Stan Part II
 author: ~
 date: '2018-04-22'
 slug: prediciting-nfl-injuries-with-stan-part-ii
@@ -26,10 +26,12 @@ library(brms)
 theme_set(theme_bw())
 options(tibble.print_max = 100, tibble.print_min = 10)
 
-player <- read_csv("C:\\Users\\ryan\\Documents\\NFL\\nfl_00-17\\PLAYER.csv")
-game <- read_csv("C:\\Users\\ryan\\Documents\\NFL\\nfl_00-17\\GAME.csv")
-injury <- read_csv("C:\\Users\\ryan\\Documents\\NFL\\nfl_00-17\\INJURY.csv")
-offense <- read_csv("C:\\Users\\ryan\\Documents\\NFL\\nfl_00-17\\OFFENSE.csv")
+knitr::opts_chunk$set(cache=TRUE)
+
+player <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\PLAYER.csv")
+game <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\GAME.csv")
+injury <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\INJURY.csv")
+offense <- read_csv("C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\OFFENSE.csv")
 
 ```
 
@@ -176,26 +178,34 @@ The last graph really sticks out to me. I see no reason for there to be a substa
 
 ###Statistical Modeling
 
+```{r, echo = FALSE}
+#Center data
+# full.data$age <- full.data$age - mean(full.data$age)
+# full.data$weight <- full.data$weight - mean(full.data$weight)
+# full.data$year <- full.data$year - 2016
+
+```
+
 ####Zero Inflated Poisson
 
-The first model I'm going to fit is a zero inflated poisson. This model is a mixture of two models. A binomial model that estimates the probability of missing zero games and a separate poisson model to estimate the number of games missed. Zeros can then be produced by both processes. The binomial model only uses year and position to estimate the probability of zero. The poisson model uses zero, position, player height, weight, and age. Additionally, the poisson model has a random intercept for each player to account for the correlation across years. Simple mathematical representations of the models are presented below.
+The first model I'm going to fit is a zero inflated poisson. This model is a mixture of two models. A binomial model that estimates the probability of missing zero games and a separate poisson model to estimate the number of games missed. Zeros can then be produced by both processes. The binomial model only uses year and position to estimate the probability of zero. The poisson model uses zero, position, player height, weight, and age. Additionally, the poisson model has a random intercept for each player to account for the correlation across years. Simple mathematical representations of the models are presented below. I stick an exponential prior with rate parameter = 2 to impose some regularization on the varying player intercepts. This factor has over 900 levels and at most 3 observations per level.
 $$Y \sim ZIPoisson(p_i, \lambda_i) $$
 $$logit(p_i) \sim \alpha_p + \beta_p*X $$
 $$log(\lambda_i) \sim \alpha_\lambda  + \alpha_{player_p} + \beta_\lambda*X $$
-$$\alpha_{\lambda} \sim Normal(0,100)$$
-$$\alpha_z \sim Logistic(0,1)$$
+$$\alpha_{\lambda} \sim Normal(0,10)$$
+$$\alpha_z \sim Normal(0,1)$$
 $$\beta_\lambda, \beta_z \sim Normal(0,1) $$
 $$\alpha_{player_\lambda} \sim Normal(0,sd_\lambda)$$
-$$sd_\lambda \sim Cauchy(0,2)$$
+$$sd_\lambda \sim exponential(2)$$
 ```{r, message = FALSE, warning = FALSE, cache = TRUE}
 
 fit0 <- brm(bf(games.inj ~ year + pos1 + height + weight + age + (1|player),
-               zi ~ year + pos1),
+               zi ~ 1),
             data = full.data, family = zero_inflated_poisson(link = "log"),
-            prior = c(set_prior("normal(0,100)", class = "Intercept"),
-                      set_prior("logistic(0,1)", class = "Intercept", dpar = "zi"),
-                      set_prior("normal(0,1)", class = "b"),
-                      set_prior("cauchy(0,2)", class = "sd")),
+            prior = c(set_prior("normal(0, 5)", class = "Intercept"),
+                      set_prior("normal(0,.5)", class = "Intercept", dpar = "zi"),
+                      set_prior("normal(0, 1)", class = "b"),
+                      set_prior("exponential(2)", class = "sd")),
             cores = 4)
 summary(fit0)
 
@@ -212,7 +222,7 @@ pp_check(fit0, nsamples = 20, type = "ecdf_overlay")
 
 The zero inflated poisson model seems to fit the data fairly well except for those players who missed 16 games. It's conceivable that there is a third process at work which determines whether a player will miss 16 games, namely that they suffer a season ending injury in the off-season or pre-season. Stan would allow us to create a mixture distribution like the zero inflated poisson. 
 
-For simplicity (i.e. I'm lazy) I'm instead going to devide the number of games missed by 16, which transforms the outcome into the proportion of games missed out of 16. This allows us to fit a zero-one inflated beta regression. This model is a mixture distribution like the zero inflated poisson, except there are now two binomial processes that account for the values 0 and 1. The beta distribution is then used as the model for all values inbetween. One big issue with this model is that it's continuously valued between the [0,1] interval, where as our data was originally integers. 
+For simplicity (i.e. I'm lazy) I'm instead going to divide the number of games missed by 16, which transforms the outcome into the proportion of games missed out of 16. This allows us to fit a zero-one inflated beta regression. This model is a mixture distribution like the zero inflated poisson, except there are now two binomial processes that account for the values 0 and 1. The beta distribution is then used as the model for all values in between. One big issue with this model is that it's continuously valued between the (0,1) interval, where as our data were originally integers. 
 
 
 ####Zero-One Inflated Beta 
@@ -222,30 +232,46 @@ For simplicity (i.e. I'm lazy) I'm instead going to devide the number of games m
 full.data$prop.inj <- full.data$games.inj/16
 
 fit1 <- brm(bf(prop.inj ~ year + pos1 + height + weight + age + (1|player),
-               coi ~ year + pos1,
-               zoi ~ year),
+               coi ~ 1,
+               zoi ~ 1),
             data = full.data, family = zero_one_inflated_beta(),
-            prior = c(set_prior("normal(0,100)", class = "Intercept"),
-                      set_prior("logistic(0,1)", class = "Intercept", dpar = "zoi"),
-                      set_prior("logistic(0,1)", class = "Intercept", dpar = "coi"),
+            prior = c(set_prior("normal(0, 5)", class = "Intercept"),
+                      set_prior("normal(0,.5)", class = "Intercept", dpar = "zoi"),
+                      set_prior("normal(0,.5)", class = "Intercept", dpar = "coi"),
                       set_prior("normal(0,1)", class = "b"),
-                      set_prior("cauchy(0,2)", class = "sd")),
+                      set_prior("exponential(2)", class = "sd")),
             cores = 4)
 summary(fit1)
+
 ```
-####Posterior Predictive Checks
+
+I'm more familiar with the zero inflated poisson so I'm going to stick with the zero inflated poisson, even though it doesn't account for the increased prevalence of missing 16 games.
+
+####Simple Interpretation
+It's really easy to get marginal effect plots in brms. The estimates show an incredibly strong yearly trend due to under reporting for 2015, 2016 in the data. 
 ```{r}
-pp_check(fit1, nsamples = 20)
-pp_check(fit1, nsamples = 20, type = "ecdf_overlay")
+marginal_effects(fit0, ask = FALSE)
+
 ```
 
-We can see from the plots above that the zero one inflated beta model fits the tails well, but does a poor job inbetween. Since about 70% of the data is either a 0 or a 16, the improved fit in the tails will likely improve the model performance overall. We can compare the two models using the LOO function, which performs approximate leave-one-out cross-validation.
 
-###Comparison
+####Simple Simulation
+
+One interesting application of the model would be to simulate the expected number of games missed for a particular player. I try to do that for Antonio Brown below. I wanted to see how ridiculous the yearly extrapolation was so I predicted the expected number of missed games for Brown in 2016, 2017, and finally 2018. It's clear that the model is primarily driven by the unrealistic yearly trend in the data.
+
 ```{r}
-LOO(fit0, fit1)
+sim.data <- data.frame(year = c(rep(2016, 1000),rep(2017,1000),rep(2018, 1000)),
+                       pos1 = rep("WR", 3000),
+                       height = rep(70, 3000),
+                       weight = rep(186, 3000),
+                       age = c(rep(28, 1000),rep(29,1000),rep(30,1000)),
+                       player = rep("AB-3500", 3000))
+
+abrown.pred <- predict(fit0, newdata = sim.data)
+
+ggplot(data.frame(abrown.pred,year = c(rep(2016, 1000),rep(2017,1000),rep(2018, 1000))),
+       aes(exp(Estimate))) + geom_density() + facet_wrap( ~ year)
+
+
 ```
 
-Based on the leave-one-out cross validation the zero-one beta regression provides a better fit. Like I said above, this is likely due to the improved fit in the tails, but at the cost of worse fit in between. 
-
-###Simulation

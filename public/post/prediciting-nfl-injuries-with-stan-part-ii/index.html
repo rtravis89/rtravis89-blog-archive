@@ -6,8 +6,8 @@
 <meta name="generator" content="Hugo 0.32.2" />
 
 
-<title>Prediciting NFL Injuries with Stan Part II - Fledgling Statistician</title>
-<meta property="og:title" content="Prediciting NFL Injuries with Stan Part II - Fledgling Statistician">
+<title>Predicting NFL Injuries with Stan Part II - Fledgling Statistician</title>
+<meta property="og:title" content="Predicting NFL Injuries with Stan Part II - Fledgling Statistician">
 
 
 
@@ -69,7 +69,7 @@
     <span class="article-duration">18 min read</span>
     
 
-    <h1 class="article-title">Prediciting NFL Injuries with Stan Part II</h1>
+    <h1 class="article-title">Predicting NFL Injuries with Stan Part II</h1>
 
     
     <span class="article-date">2018/04/22</span>
@@ -183,9 +183,9 @@ full.data &lt;-
   select(year,player,pname,pos1,height,weight,dob,start,injured) %&gt;%
   filter(pos1 %in% c(&quot;QB&quot;,&quot;RB&quot;,&quot;TE&quot;,&quot;WR&quot;)) %&gt;%
   group_by(year,player,pname,pos1,height,weight,dob,start) %&gt;%
-  summarize(games.inj = sum(injured)) %&gt;% unique()</code></pre>
-<pre><code>## Warning: package &#39;bindrcpp&#39; was built under R version 3.4.4</code></pre>
-<pre class="r"><code>#Age variable
+  summarize(games.inj = sum(injured)) %&gt;% unique()
+
+#Age variable
 full.data$age &lt;- full.data$year - lubridate::year(as.Date(full.data$dob, &quot;%m/%d/%Y&quot;))</code></pre>
 <p>The table I’ll use for analysis is printed here.</p>
 <pre class="r"><code>full.data</code></pre>
@@ -244,13 +244,13 @@ full.data$age &lt;- full.data$year - lubridate::year(as.Date(full.data$dob, &quo
 ##  3rd Qu.:236                      3rd Qu.:2015   3rd Qu.: 1.000  
 ##  Max.   :283                      Max.   :2017   Max.   :16.000  
 ##                                                                  
-##       age      
-##  Min.   :20.0  
-##  1st Qu.:24.0  
-##  Median :25.0  
-##  Mean   :26.2  
-##  3rd Qu.:28.0  
-##  Max.   :58.0  
+##       age       
+##  Min.   :17.00  
+##  1st Qu.:24.00  
+##  Median :25.00  
+##  Mean   :26.19  
+##  3rd Qu.:28.00  
+##  Max.   :58.00  
 ##  NA&#39;s   :3</code></pre>
 <p>From examining the table, a few things immediately pop out. The max age is 58 years old! And someone has 1994 listed as the year they entered the league. I’ll spare you the boring details, but essentially several new players share names with previous players and some how their information has gotten mixed up. For instance this profile on <a href="http://www.nfl.com/player/georgefarmer/2513838/profile">NFL.com</a> for WR George Farmer (the culprit in our data set) has his age listed as 59 years old. The player in our data set is also listed as a WR. I updated the data set to reflect what I think are the correct values, 24 year old running back. The ages are missing for 3 players as well. They all recently entered the league, so I simply assume they are 23 years old.</p>
 <p>There is also a Charles Johnson, WR, who was born 1972. I’m pretty sure this is actually a player who was born in 1989 and now plays for the jets and not the Charles Johnson that won a superbowl with the Patriots in the early 2000s. Another WR name Trevor Davis also had an incorrect age. I manually corrected these records.</p>
@@ -284,20 +284,20 @@ full.data %&gt;% group_by(year) %&gt;% summarize(total = sum(games.inj)) %&gt;%
 <h3>Statistical Modeling</h3>
 <div id="zero-inflated-poisson" class="section level4">
 <h4>Zero Inflated Poisson</h4>
-<p>The first model I’m going to fit is a zero inflated poisson. This model is a mixture of two models. A binomial model that estimates the probability of missing zero games and a separate poisson model to estimate the number of games missed. Zeros can then be produced by both processes. The binomial model only uses year and position to estimate the probability of zero. The poisson model uses zero, position, player height, weight, and age. Additionally, the poisson model has a random intercept for each player to account for the correlation across years. Simple mathematical representations of the models are presented below. <span class="math display">\[Y \sim ZIPoisson(p_i, \lambda_i) \]</span> <span class="math display">\[logit(p_i) \sim \alpha_p + \beta_p*X \]</span> <span class="math display">\[log(\lambda_i) \sim \alpha_\lambda  + \alpha_{player_p} + \beta_\lambda*X \]</span> <span class="math display">\[\alpha_{\lambda} \sim Normal(0,100)\]</span> <span class="math display">\[\alpha_z \sim Logistic(0,1)\]</span> <span class="math display">\[\beta_\lambda, \beta_z \sim Normal(0,1) \]</span> <span class="math display">\[\alpha_{player_\lambda} \sim Normal(0,sd_\lambda)\]</span> <span class="math display">\[sd_\lambda \sim Cauchy(0,2)\]</span></p>
+<p>The first model I’m going to fit is a zero inflated poisson. This model is a mixture of two models. A binomial model that estimates the probability of missing zero games and a separate poisson model to estimate the number of games missed. Zeros can then be produced by both processes. The binomial model only uses year and position to estimate the probability of zero. The poisson model uses zero, position, player height, weight, and age. Additionally, the poisson model has a random intercept for each player to account for the correlation across years. Simple mathematical representations of the models are presented below. I stick an exponential prior with rate parameter = 2 to impose some regularization on the varying player intercepts. This factor has over 900 levels and at most 3 observations per level. <span class="math display">\[Y \sim ZIPoisson(p_i, \lambda_i) \]</span> <span class="math display">\[logit(p_i) \sim \alpha_p + \beta_p*X \]</span> <span class="math display">\[log(\lambda_i) \sim \alpha_\lambda  + \alpha_{player_p} + \beta_\lambda*X \]</span> <span class="math display">\[\alpha_{\lambda} \sim Normal(0,10)\]</span> <span class="math display">\[\alpha_z \sim Normal(0,1)\]</span> <span class="math display">\[\beta_\lambda, \beta_z \sim Normal(0,1) \]</span> <span class="math display">\[\alpha_{player_\lambda} \sim Normal(0,sd_\lambda)\]</span> <span class="math display">\[sd_\lambda \sim exponential(2)\]</span></p>
 <pre class="r"><code>fit0 &lt;- brm(bf(games.inj ~ year + pos1 + height + weight + age + (1|player),
-               zi ~ year + pos1),
+               zi ~ 1),
             data = full.data, family = zero_inflated_poisson(link = &quot;log&quot;),
-            prior = c(set_prior(&quot;normal(0,100)&quot;, class = &quot;Intercept&quot;),
-                      set_prior(&quot;logistic(0,1)&quot;, class = &quot;Intercept&quot;, dpar = &quot;zi&quot;),
-                      set_prior(&quot;normal(0,1)&quot;, class = &quot;b&quot;),
-                      set_prior(&quot;cauchy(0,2)&quot;, class = &quot;sd&quot;)),
+            prior = c(set_prior(&quot;normal(0, 5)&quot;, class = &quot;Intercept&quot;),
+                      set_prior(&quot;normal(0,.5)&quot;, class = &quot;Intercept&quot;, dpar = &quot;zi&quot;),
+                      set_prior(&quot;normal(0, 1)&quot;, class = &quot;b&quot;),
+                      set_prior(&quot;exponential(2)&quot;, class = &quot;sd&quot;)),
             cores = 4)
 summary(fit0)</code></pre>
 <pre><code>##  Family: zero_inflated_poisson 
 ##   Links: mu = log; zi = logit 
 ## Formula: games.inj ~ year + pos1 + height + weight + age + (1 | player) 
-##          zi ~ year + pos1
+##          zi ~ 1
 ##    Data: full.data (Number of observations: 1908) 
 ## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1; 
 ##          total post-warmup samples = 4000
@@ -306,23 +306,19 @@ summary(fit0)</code></pre>
 ## Group-Level Effects: 
 ## ~player (Number of levels: 959) 
 ##               Estimate Est.Error l-95% CI u-95% CI Eff.Sample Rhat
-## sd(Intercept)     1.21      0.07     1.07     1.36        622 1.00
+## sd(Intercept)     1.18      0.07     1.04     1.32        648 1.00
 ## 
 ## Population-Level Effects: 
 ##              Estimate Est.Error l-95% CI u-95% CI Eff.Sample Rhat
-## Intercept    -1291.35    110.53 -1508.49 -1076.42       1811 1.00
-## zi_Intercept   469.97    175.64   121.19   812.76       4000 1.00
-## year             0.64      0.05     0.54     0.75       1809 1.00
-## pos1RB           0.27      0.29    -0.31     0.84        347 1.01
-## pos1TE           0.36      0.28    -0.20     0.92        587 1.00
-## pos1WR           0.21      0.25    -0.29     0.71        627 1.00
-## height          -0.00      0.04    -0.09     0.08        607 1.01
-## weight          -0.01      0.01    -0.02     0.00        753 1.00
-## age              0.00      0.02    -0.03     0.04        866 1.01
-## zi_year         -0.23      0.09    -0.40    -0.06       4000 1.00
-## zi_pos1RB        0.28      0.30    -0.26     0.89        969 1.00
-## zi_pos1TE       -0.02      0.31    -0.59     0.61       1121 1.00
-## zi_pos1WR        0.35      0.28    -0.15     0.92       1104 1.00
+## Intercept    -1440.29    105.04 -1650.41 -1232.46       1905 1.00
+## zi_Intercept     0.05      0.09    -0.12     0.23       1186 1.00
+## year             0.72      0.05     0.61     0.82       1898 1.00
+## pos1RB           0.15      0.25    -0.34     0.64        696 1.00
+## pos1TE           0.36      0.24    -0.13     0.82        740 1.00
+## pos1WR           0.05      0.22    -0.37     0.48        753 1.00
+## height          -0.00      0.04    -0.09     0.08        526 1.01
+## weight          -0.01      0.01    -0.02     0.00        523 1.01
+## age              0.01      0.02    -0.03     0.04        673 1.00
 ## 
 ## Samples were drawn using sampling(NUTS). For each parameter, Eff.Sample 
 ## is a crude measure of effective sample size, and Rhat is the potential 
@@ -331,12 +327,12 @@ summary(fit0)</code></pre>
 <div id="posterior-predictive-checks" class="section level4">
 <h4>Posterior Predictive Checks</h4>
 <pre class="r"><code>pp_check(fit0, nsamples = 20) + xlim(c(0,16))</code></pre>
-<pre><code>## Warning: Removed 434 rows containing non-finite values (stat_density).</code></pre>
-<p><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre><code>## Warning: Removed 373 rows containing non-finite values (stat_density).</code></pre>
+<p><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
 <pre class="r"><code>pp_check(fit0, nsamples = 20, type = &quot;ecdf_overlay&quot;)</code></pre>
-<p><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
+<p><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
 <p>The zero inflated poisson model seems to fit the data fairly well except for those players who missed 16 games. It’s conceivable that there is a third process at work which determines whether a player will miss 16 games, namely that they suffer a season ending injury in the off-season or pre-season. Stan would allow us to create a mixture distribution like the zero inflated poisson.</p>
-<p>For simplicity (i.e. I’m lazy) I’m instead going to devide the number of games missed by 16, which transforms the outcome into the proportion of games missed out of 16. This allows us to fit a zero-one inflated beta regression. This model is a mixture distribution like the zero inflated poisson, except there are now two binomial processes that account for the values 0 and 1. The beta distribution is then used as the model for all values inbetween. One big issue with this model is that it’s continuously valued between the [0,1] interval, where as our data was originally integers.</p>
+<p>For simplicity (i.e. I’m lazy) I’m instead going to divide the number of games missed by 16, which transforms the outcome into the proportion of games missed out of 16. This allows us to fit a zero-one inflated beta regression. This model is a mixture distribution like the zero inflated poisson, except there are now two binomial processes that account for the values 0 and 1. The beta distribution is then used as the model for all values in between. One big issue with this model is that it’s continuously valued between the (0,1) interval, where as our data were originally integers.</p>
 </div>
 <div id="zero-one-inflated-beta" class="section level4">
 <h4>Zero-One Inflated Beta</h4>
@@ -344,21 +340,21 @@ summary(fit0)</code></pre>
 full.data$prop.inj &lt;- full.data$games.inj/16
 
 fit1 &lt;- brm(bf(prop.inj ~ year + pos1 + height + weight + age + (1|player),
-               coi ~ year + pos1,
-               zoi ~ year),
+               coi ~ 1,
+               zoi ~ 1),
             data = full.data, family = zero_one_inflated_beta(),
-            prior = c(set_prior(&quot;normal(0,100)&quot;, class = &quot;Intercept&quot;),
-                      set_prior(&quot;logistic(0,1)&quot;, class = &quot;Intercept&quot;, dpar = &quot;zoi&quot;),
-                      set_prior(&quot;logistic(0,1)&quot;, class = &quot;Intercept&quot;, dpar = &quot;coi&quot;),
+            prior = c(set_prior(&quot;normal(0, 5)&quot;, class = &quot;Intercept&quot;),
+                      set_prior(&quot;normal(0,.5)&quot;, class = &quot;Intercept&quot;, dpar = &quot;zoi&quot;),
+                      set_prior(&quot;normal(0,.5)&quot;, class = &quot;Intercept&quot;, dpar = &quot;coi&quot;),
                       set_prior(&quot;normal(0,1)&quot;, class = &quot;b&quot;),
-                      set_prior(&quot;cauchy(0,2)&quot;, class = &quot;sd&quot;)),
+                      set_prior(&quot;exponential(2)&quot;, class = &quot;sd&quot;)),
             cores = 4)
 summary(fit1)</code></pre>
 <pre><code>##  Family: zero_one_inflated_beta 
 ##   Links: mu = logit; phi = identity; zoi = logit; coi = logit 
 ## Formula: prop.inj ~ year + pos1 + height + weight + age + (1 | player) 
-##          coi ~ year + pos1
-##          zoi ~ year
+##          coi ~ 1
+##          zoi ~ 1
 ##    Data: full.data (Number of observations: 1908) 
 ## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1; 
 ##          total post-warmup samples = 4000
@@ -367,60 +363,52 @@ summary(fit1)</code></pre>
 ## Group-Level Effects: 
 ## ~player (Number of levels: 959) 
 ##               Estimate Est.Error l-95% CI u-95% CI Eff.Sample Rhat
-## sd(Intercept)     0.07      0.05     0.00     0.19       2347 1.00
+## sd(Intercept)     0.06      0.05     0.00     0.18       1983 1.00
 ## 
 ## Population-Level Effects: 
 ##               Estimate Est.Error l-95% CI u-95% CI Eff.Sample Rhat
-## Intercept      -498.15     99.94  -690.11  -302.37       4000 1.00
-## zoi_Intercept   597.93    130.02   346.72   851.70       4000 1.00
-## coi_Intercept -6177.04   1051.98 -8340.42 -4398.34       4000 1.00
-## year              0.25      0.05     0.15     0.34       4000 1.00
-## pos1RB            0.16      0.17    -0.16     0.48       4000 1.00
-## pos1TE            0.06      0.16    -0.24     0.37       4000 1.00
-## pos1WR            0.06      0.14    -0.21     0.34       4000 1.00
+## Intercept      -495.65     99.30  -696.45  -296.50       4000 1.00
+## zoi_Intercept     0.90      0.05     0.80     1.00       4000 1.00
+## coi_Intercept    -2.96      0.12    -3.20    -2.73       4000 1.00
+## year              0.24      0.05     0.15     0.34       4000 1.00
+## pos1RB            0.16      0.17    -0.16     0.49       4000 1.00
+## pos1TE            0.07      0.16    -0.25     0.37       4000 1.00
+## pos1WR            0.06      0.14    -0.20     0.34       4000 1.00
 ## height            0.00      0.03    -0.05     0.05       4000 1.00
 ## weight           -0.00      0.00    -0.01     0.00       4000 1.00
-## age               0.03      0.01     0.00     0.05       4000 1.00
-## zoi_year         -0.30      0.06    -0.42    -0.17       4000 1.00
-## coi_year          3.06      0.52     2.18     4.13       4000 1.00
-## coi_pos1RB        0.53      0.54    -0.45     1.63       4000 1.00
-## coi_pos1TE        0.69      0.55    -0.35     1.81       4000 1.00
-## coi_pos1WR        0.64      0.52    -0.31     1.75       4000 1.00
+## age               0.02      0.01     0.00     0.05       4000 1.00
 ## 
 ## Family Specific Parameters: 
 ##     Estimate Est.Error l-95% CI u-95% CI Eff.Sample Rhat
-## phi     5.02      0.30     4.46     5.62       4000 1.00
+## phi     5.01      0.30     4.45     5.63       4000 1.00
 ## 
 ## Samples were drawn using sampling(NUTS). For each parameter, Eff.Sample 
 ## is a crude measure of effective sample size, and Rhat is the potential 
 ## scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+<p>I’m more familiar with the zero inflated poisson so I’m going to stick with the zero inflated poisson, even though it doesn’t account for the increased prevalence of missing 16 games.</p>
 </div>
-<div id="posterior-predictive-checks-1" class="section level4">
-<h4>Posterior Predictive Checks</h4>
-<pre class="r"><code>pp_check(fit1, nsamples = 20)</code></pre>
-<p><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
-<pre class="r"><code>pp_check(fit1, nsamples = 20, type = &quot;ecdf_overlay&quot;)</code></pre>
-<p><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-14-2.png" width="672" /></p>
-<p>We can see from the plots above that the zero one inflated beta model fits the tails well, but does a poor job inbetween. Since about 70% of the data is either a 0 or a 16, the improved fit in the tails will likely improve the model performance overall. We can compare the two models using the LOO function, which performs approximate leave-one-out cross-validation.</p>
+<div id="simple-interpretation" class="section level4">
+<h4>Simple Interpretation</h4>
+<p>It’s really easy to get marginal effect plots in brms. The estimates show an incredibly strong yearly trend due to under reporting for 2015, 2016 in the data.</p>
+<pre class="r"><code>marginal_effects(fit0, ask = FALSE)</code></pre>
+<p><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-15-1.png" width="672" /><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-15-2.png" width="672" /><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-15-3.png" width="672" /><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-15-4.png" width="672" /><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-15-5.png" width="672" /></p>
 </div>
+<div id="simple-simulation" class="section level4">
+<h4>Simple Simulation</h4>
+<p>One interesting application of the model would be to simulate the expected number of games missed for a particular player. I try to do that for Antonio Brown below. I wanted to see how ridiculous the yearly extrapolation was so I predicted the expected number of missed games for Brown in 2016, 2017, and finally 2018. It’s clear that the model is primarily driven by the unrealistic yearly trend in the data.</p>
+<pre class="r"><code>sim.data &lt;- data.frame(year = c(rep(2016, 1000),rep(2017,1000),rep(2018, 1000)),
+                       pos1 = rep(&quot;WR&quot;, 3000),
+                       height = rep(70, 3000),
+                       weight = rep(186, 3000),
+                       age = c(rep(28, 1000),rep(29,1000),rep(30,1000)),
+                       player = rep(&quot;AB-3500&quot;, 3000))
+
+abrown.pred &lt;- predict(fit0, newdata = sim.data)
+
+ggplot(data.frame(abrown.pred,year = c(rep(2016, 1000),rep(2017,1000),rep(2018, 1000))),
+       aes(exp(Estimate))) + geom_density() + facet_wrap( ~ year)</code></pre>
+<p><img src="/post/2018-04-16-prediciting-nfl-injuries-with-stan-part-ii_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
 </div>
-<div id="comparison" class="section level3">
-<h3>Comparison</h3>
-<pre class="r"><code>LOO(fit0, fit1)</code></pre>
-<pre><code>## Warning: Model comparisons are likely invalid as the response parts of at
-## least two models do not match.</code></pre>
-<pre><code>## Warning: Found 241 observations with a pareto_k &gt; 0.7 in model &#39;fit0&#39;.
-## With this many problematic observations, it may be more appropriate to use
-## &#39;kfold&#39; with argument &#39;K = 10&#39; to perform 10-fold cross-validation rather
-## than LOO.</code></pre>
-<pre><code>##               LOOIC     SE
-## fit0        4854.51 135.19
-## fit1        1973.53  63.80
-## fit0 - fit1 2880.98 113.63</code></pre>
-<p>Based on the leave-one-out cross validation the zero-one beta regression provides a better fit. Like I said above, this is likely due to the improved fit in the tails, but at the cost of worse fit in between.</p>
-</div>
-<div id="simulation" class="section level3">
-<h3>Simulation</h3>
 </div>
 
     </div>
