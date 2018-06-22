@@ -1,0 +1,183 @@
+---
+title: Odds ratios and logistic regression basics
+author: ~
+date: '2018-06-22'
+slug: logistic-regression
+categories: []
+tags: []
+---
+
+Binary outcome variables that only take on two distinct values such as alive vs. not alive are very common in medicine and elsewhere. Traditionally, relating these variables to explanatory categorical variables of interest was and often is done using what are called contingency tables. When the number of explanatory variables of interest is small and the number of categories for said predictors is few, these contingency table methods can be appropriate. However, when there are possibly many explanatory variables, the variables are not categorical, or the variables have many categories, these methods either won't work or are too cumbersome. Luckily, there exists a regression technique called logistic regression that generalizes these methods to handle all of the above issues and more. In this post I'd like to cover the basics of interpreting logistic regressions with multiple explanatory variables. Before that, it's necessary to understand risk, odds ratios, and their connection to contingency tables. In addition, some common related statistical pitfalls will be discussed.
+
+#Contingency Tables and Simpson's Paradox
+
+Contingency tables are a way of representing the relationship between two or more categorical variables. Below is a 2x2 contingency with data from the indictments of 674 defendants involved in multiple murders in Florida from 1976 to 1987. The data is presented in Alan Agresti's book "An introduction to categorical data analysis". The table relates the death penalty verdict to the defendant's race. The proportion of black defendants who received a "yes" verdict is p = 15/(176+15), or about 8%. The number of white defendants who received a "yes" verdict is p = 53/(430+53), or about 11%. This gives an odds ratio of (53x176)/(430x5) or about 1.45. This would appear to indicate that the odds for receiving the death penalty are higher for white defendants. However, this is not the case.
+
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE, cache = TRUE}
+library(tidyverse)
+crime <- data_frame(victim_race = c("White","White","Black","Black",
+	                  	              "White","White","Black","Black"),
+		                defendant_race = c("White","Black","White","Black",
+	                                     "White","Black","White","Black"),
+	                  death_penalty = c("Yes","Yes","Yes","Yes",
+	                  	                "No","No","No","No"),
+	                  count = c(53,11,0,4,
+	                  	        414,37,16,139))
+
+crime_table <- xtabs(count ~ defendant_race + death_penalty, data = crime)
+ftable(crime_table, row.vars = "defendant_race")
+
+```
+
+What we have thus far considered is called a marginal association. If we extend our contingency table out to include another categorical variable we can consider what are called conditional associations. For instance, the tables below show defendant's race and death penalty broken out by the victim's race. This is what is mean by conditional, the value for victim's race is held fixed and the association between the other variables is considered. For indictments involving black victim's, the proportion of black defendants who received the death penalty is p = 4/(139+4), or about 3%. The proportion involving white defendants is 0/16, 0%. The odds ratio is (0x139)/(16x4) = 0. This seems to be the opposite of the marginal association considered above, where it seemed that white defendants were more likely to receive the death penalty.
+
+What about the association for victim's who are white? The proportion of black defendants is 11/(37+11) (23%) and white defendants is 53/(414+53) (11%). The odds ratio is (53x37)/(414x11) = .43. This shows the same flipped relationship as above! How is it that when ignoring the victim's race, we see an increased odds of white defendants receiving the death penalty but that this associates completely flips when we condition on the victim's race? This is an example of a famous statistical paradox referred to as Simpson's paradox. A lot has been written about this paradox and I'm not going to rehash it here. The key lesson for now is to recognize that marginal associations can be very different from conditional associations and can lead to misleading inferences.  
+
+```{r,warning = FALSE, message = FALSE, echo = FALSE, cache = TRUE}
+crime_table <- xtabs(count ~ defendant_race + death_penalty + victim_race, data = crime)
+crime_table
+
+```
+
+#Risk and Odds
+
+To my mind the most natural scale on which to interpret results for decision making is on the risk or probability scale. Why then talk about things like odds ratios when we could just consider risk differences, risk ratios (relative risk), etc? Well even though probability is a more natural scale for interpretation, this does not imply that it is the proper scale for analysis. The odds ratio and the log odds ratio (log here, as in most statistical applications, means natural logarithm) are often a more proper scale for analysis. Briefly, in any population where the underlying risk varies and the effect can be treated as constant on the log odds scale, reporting on the probability scale (risk difference, or relative risk) will probably not be appropriate since the estimates will vary [see here](https://www.researchgate.net/publication/221689809_Odds_ratios_revisited). Maybe I'll write a separate post expanding this argument.
+
+The dilemma then is that the scientifically relevant scale and the proper scale for analysis are not always the same. Thus, understanding each scale and how to translate back and forth is important. Below are three plots showing the relationship between an explanatory variable, 'x', and an outcome on the log odds scale, odds scale, and probability scale. The first thing that sticks out is that the plot of the log odds is a nice straight line. This shows that for a d unit change in x there is a constant change in the log odds. Notice also, that this is not true for the odds ratio or the probability scales. For instance, the probability at x = 20 is about .03, the probability at x = 30 is .08, and the probability at x = 40 is .23. The change in probability for a 10 unit change in x depends on where the change starts, i.e. the association is not "additive"" on these scales. This is also true of relative risk.
+
+```{r, ,warning = FALSE, message = FALSE, echo = FALSE}
+library(tidyverse)
+x <- seq(0,100, length.out = 1000)
+log_odds <- -6 + .12*x
+odds <- exp(log_odds)
+prob <- exp(log_odds) / (1 + exp(log_odds))
+
+examp <- data_frame(x,prob,odds,log_odds) %>% gather(key = key, value = value, -x)
+examp$key <- factor(examp$key, labels = c("Log Odds Ratio","Odds Ratio","Probability"))
+
+ggplot(examp, aes(x = x, y = value)) + geom_line() + facet_grid(key ~ ., scales = "free",
+                                                                labeller = label_value)
+```
+
+#Logistic Regression
+
+Logistic regression is an attractive way of extending regression techniques to binary data (though not the only way). Part of the attraction is the ease with which the model can be used to produce familiar measures like probability or odds ratios. conveniently, from a statistical perspective, the model is additive on the right scale (log odds). However, I've often noticed a fundamental misunderstanding as to which scale the model is additive on. Below is the implied relationship between covariates and outcome for logistic regressions on the probability scale, odds scale, and log odds scale.
+
+####Probability Scale
+$$ P(x) = \frac{exp(\beta_0 + \beta_1*x)}{1 + exp(\beta_0 + \beta_1*x)} $$
+
+####Odds Scale
+$$ \frac{P(x)}{1 - P(x)} = exp(\beta_0 + \beta_1*x) $$
+
+####Log Odds Scale
+$$ log(\frac{P(x)}{1 - P(x)}) = \beta_0 + \beta_1*x $$
+
+Notice that only on the log odds scale does the logistic regression have the familiar additive form of most regression methods. What this means is that only on the log odds scale can the $\beta$s be added together. Curiously in the medical literature, sometimes coefficients are reported on the odds scale and then added. This is mathematically incorrect. The relationship is multiplicative on the odds scale.
+
+Below is a logistic regression applied to the crime data presented above. The estimate is presented on the log odds scale. By exponentiating it we can get the odds ratio (exp(.3689)) = 1.45. These are the same answers as above. Additionally, the probability of indictment can be computed as well via the R function predict like I do below, or by using the formula above. exp(-2.46)/(1 + exp(-2.46)) for black defendants and exp(-2.46 + .3689)/(1 + exp(-2.46 + .3689)) for white defendants. But as we've already seen, these estimates are misleading since the victim's race needs to be accounted for. This can easily be done with a logistic regression. 
+
+```{r}
+
+#Marginal model for defendant suggests white victims more likely to get death penalty
+mod1 <- glm(factor(death_penalty) ~  defendant_race,
+	          data = crime,
+	          family = binomial,
+	          weights = count)
+summary(mod1)
+paste0("The odds ratio of white to black defendant's is ", round(exp(coef(mod1))[2],2))
+
+#Probability of indictment if defendant is black
+predict(mod1, newdata = data.frame(defendant_race = "Black"), type = "response")
+exp(-2.46)/(1 + exp(-2.46))
+#Probability of indictment if defendant is black
+predict(mod1, newdata = data.frame(defendant_race = "White"), type = "response")
+exp(-2.4624 + .3689)/(1 + exp(-2.4624 + .3689))
+
+```
+
+
+The results of a logistic regression with both defendant race and victim race is presented below. The correct estimate of the odds ratio is now given.
+
+```{r}
+mod2 <- glm(factor(death_penalty) ~  defendant_race + victim_race,
+	          data = crime,
+	          family = binomial,
+	          weights = count)
+summary(mod2)
+paste0("The odds ratio of white to black defendant's is ", round(exp(coef(mod2))[2],2))
+```
+#Logistic Regression: Interpreting multiple variables
+
+Unlike standard linear regression models, interpreting logistic regressions with multiple variables can be tricky. This is directly related to the fact that it is only additive on the log odds scale, yet we typically want results presented on the odds or probability scales. Deriving the odds ratio is simple enough categorical variables, you just exponentiate the relevant coefficient from the model and this provides the odds ratio of that factor level relative to the reference category used in the model. For instance, in the model with defendant race and victim race the exponentiated coefficient for defendant race is .43. So the odds of receiving the death penalty are reduced by over half for white defendants relative to black defendants. Notice that this estimate is multiplicative, it essentially halves the odds of receiving the death penalty. It does not say anything about what the actual odds are. To estimate the odds, all the variables in the model need to be used. This can be seen by using some algebra on the odds ratio scale equation above.
+
+$$ \frac{P(x)}{1 - P(x)} = exp(\beta_0 + \beta_1*x1 + \beta_2*x2) = exp(\beta_0)*exp(\beta_1*x1)*exp(\beta_2*x2)$$
+
+What we see then is that estimating the odds requires a value specified for all of the variables in the model. It also provides an interpretation of the intercept on the odds scale, it's the value of the odds when all the xs are set to 0 (because exp(0) = 1). In the case above, if we set the victim's race to black then the odds are $exp(-3.5961)*.42 = .027 * .42 = .011$. So the odds of receiving the death penalty when the victim is black and the defendant is black are about .027, which is then approximately halved to .011 if the defendant is white. Relatedly, when the victim is white and the defendant is black the odds are $exp(-3.5961)*exp(2.4044) = .304$, these odds are again halved when the defendant is white, $exp(-3.5961)*exp(2.4044)*.42 = .128$. Thus we see that the effects in a logistic regression are multiplicative on the odds scale.
+
+I fit a logistic regression model to the the WCGS dataset (Western Collaborative Group Study). The outcome is the occurrence of coronary heart disease. The explanatory variables I used are bmi, whether the subject smokes, and the subjects age. I've plotted the estimated log odds and probability as a function of bmi for at age = 35 (black lines), age = 45 (red lines), and age = 55 for both smokers and nonsmokers. What you will notice is that the log odds plot consists of straight lines, indicating constant additive effects as we expect from a regression model. However, on the probability scale it's clear that the effects are not additive and that the effect of a 1 unit increase in bmi varies depending on whether the subject smokes and their age. The data is from the textbook "Regression Methods in Biostatistics" by Vittinghoff. 
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+library(gridExtra)
+library(readxl)
+data <- read_xls("C:\\Users\\rtravis\\Documents\\LR explanation\\wcgs.xls")
+
+mod <- glm(factor(chd69) ~ 1 + bmi + smoke + age, data = data, family = binomial())
+summary(mod)
+
+pred_data1 <- data_frame(bmi = seq(11, 39, length.out = 250),
+	                      age = rep(35,250),
+	                      smoke = "No")
+pred_data2 <- data_frame(bmi = seq(11, 39, length.out = 250),
+                         age = rep(45,250),
+                         smoke = "No")
+pred_data3 <- data_frame(bmi = seq(11, 39, length.out = 250),
+                         age = rep(55,250),
+                         smoke = "No")
+
+preds_lo_no1 <- predict(mod, newdata = pred_data1, type = "link")
+preds_prob_no1 <- predict(mod, newdata = pred_data1, type = "response")
+preds_lo_no2 <- predict(mod, newdata = pred_data2, type = "link")
+preds_prob_no2 <- predict(mod, newdata = pred_data2, type = "response")
+preds_lo_no3 <- predict(mod, newdata = pred_data3, type = "link")
+preds_prob_no3 <- predict(mod, newdata = pred_data3, type = "response")
+
+pred_data1 <- data_frame(bmi = seq(11, 39, length.out = 250),
+                         age = rep(35,250),
+                         smoke = "Yes")
+pred_data2 <- data_frame(bmi = seq(11, 39, length.out = 250),
+                        age = rep(45,250),
+	                      smoke = "Yes")
+pred_data3 <- data_frame(bmi = seq(11, 39, length.out = 250),
+                         age = rep(55,250),
+                         smoke = "Yes")
+
+preds_lo_yes1 <- predict(mod, newdata = pred_data1, type = "link")
+preds_prob_yes1 <- predict(mod, newdata = pred_data1, type = "response")
+preds_lo_yes2 <- predict(mod, newdata = pred_data2, type = "link")
+preds_prob_yes2 <- predict(mod, newdata = pred_data2, type = "response")
+preds_lo_yes3 <- predict(mod, newdata = pred_data3, type = "link")
+preds_prob_yes3 <- predict(mod, newdata = pred_data3, type = "response")
+
+#Log odds plots
+prediction_data_lo <- data_frame(preds_lo_no1,preds_lo_no2, preds_lo_no3, bmi = pred_data1$bmi)
+prediction_data_lo_yes <- data_frame(preds_lo_yes1,preds_lo_yes2, preds_lo_yes3, bmi = pred_data1$bmi)
+p1 <- ggplot(prediction_data_lo, aes(x = bmi, y = preds_lo_no1)) + geom_line() + geom_line(aes(y = preds_lo_no2), col = "red") +
+  geom_line(aes(y = preds_lo_no3), col = "blue") + ylab("Log Odds") + ylim(c(-6,0)) + ggtitle("No Smoking")
+p2 <- ggplot(prediction_data_lo_yes, aes(x = bmi, y = preds_lo_yes1)) + geom_line() + geom_line(aes(y = preds_lo_yes2), col = "red") +
+  geom_line(aes(y = preds_lo_yes3), col = "blue") + ylab("Log Odds") + ylim(c(-6,0)) + ggtitle("Smoking")
+
+grid.arrange(p1, p2, nrow = 1)
+
+#Probability plots
+prediction_data_prob <- data_frame(preds_prob_no1,preds_prob_no2, preds_prob_no3, bmi = pred_data1$bmi)
+prediction_data_prob_yes <- data_frame(preds_prob_yes1,preds_prob_yes2, preds_prob_yes3, bmi = pred_data1$bmi)
+p1 <- ggplot(prediction_data_prob, aes(x = bmi, y = preds_prob_no1)) + geom_line() + geom_line(aes(y = preds_prob_no2), col = "red") +
+  geom_line(aes(y = preds_prob_no3), col = "blue") + ylab("Probability") + ylim(c(0,1)) + ggtitle("No Smoking")
+p2 <- ggplot(prediction_data_prob_yes, aes(x = bmi, y = preds_prob_yes1)) + geom_line() + geom_line(aes(y = preds_prob_yes2), col = "red") +
+  geom_line(aes(y = preds_prob_yes3), col = "blue") + ylab("Probability") + ylim(c(0,1)) + ggtitle("Smoking")
+
+grid.arrange(p1, p2, nrow = 1)
+
+```

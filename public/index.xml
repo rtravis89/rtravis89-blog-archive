@@ -6,10 +6,19 @@
     <description>Recent content on Fledgling Statistician</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 22 Apr 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 22 Jun 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Odds ratios and logistic regression basics</title>
+      <link>/post/logistic-regression/</link>
+      <pubDate>Fri, 22 Jun 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/logistic-regression/</guid>
+      <description>Binary outcome variables that only take on two distinct values such as alive vs. not alive are very common in medicine and elsewhere. Traditionally, relating these variables to explanatory categorical variables of interest was and often is done using what are called contingency tables. When the number of explanatory variables of interest is small and the number of categories for said predictors is few, these contingency table methods can be appropriate.</description>
+    </item>
     
     <item>
       <title>Predicting NFL Injuries with Stan Part II</title>
