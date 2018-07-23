@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Books on Fledgling Statistician</title>
+    <link>/tags/books/</link>
+    <description>Recent content in Books on Fledgling Statistician</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 23 Jul 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/tags/books/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Some Books I Read July</title>
+      <link>/post/some-books-i-read-july/</link>
+      <pubDate>Mon, 23 Jul 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/some-books-i-read-july/</guid>
+      <description>###The Dilemmas of Lenin: Terrorism, War, Empire, Love, Revolution by Tariq Ali A very interesting biography of Lenin. The book isn&amp;rsquo;t a traditional biography. Instead, it&amp;rsquo;s a kind of intellectual biography focused around particular topics. Some of the topics, Bolshevik military strategy during the Civil War for instance, don&amp;rsquo;t mention Lenin at all. Additionally there are chapters on terrorism in Tsarist Russia, and socialist feminism of the time that aren&amp;rsquo;t focused primarily around Lenin.</description>
+    </item>
+    
+  </channel>
+</rss>
