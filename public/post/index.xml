@@ -6,10 +6,19 @@
     <description>Recent content in Posts on Fledgling Statistician</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 23 Jul 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 13 Aug 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Fantasy Football Player Rankings</title>
+      <link>/post/fantasy-football-player-rankings/</link>
+      <pubDate>Mon, 13 Aug 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/fantasy-football-player-rankings/</guid>
+      <description>Accurate prediction of player performance is of immense value to those of use who play fantasy football. With this in mind, I was curious about how well simple prediction models could perform in this context. Conveniently, Sean J. Taylor provided some nice code to make 2017 fantasy football projections which we can use to make 2018 predictions. Looking at his predictions for 2017, I’m not overly optimistic about how the models will perform.</description>
+    </item>
     
     <item>
       <title>Some Books I Read in July</title>
@@ -31,10 +40,10 @@
     
     <item>
       <title>Predicting NFL Injuries with Stan Part II</title>
-      <link>/post/prediciting-nfl-injuries-with-stan-part-ii/</link>
+      <link>/post/predicting-nfl-injuries-with-stan-part-ii/</link>
       <pubDate>Sun, 22 Apr 2018 00:00:00 +0000</pubDate>
       
-      <guid>/post/prediciting-nfl-injuries-with-stan-part-ii/</guid>
+      <guid>/post/predicting-nfl-injuries-with-stan-part-ii/</guid>
       <description>Previously I use data from armchair analysis to build a simple model to predict whether an NFL player would have an injury based only on their position. I restricted the analysis to QBs, RBs, TEs, and WRs. In this post I’d like to expand the model to include 3 years of injury data (which is all I have), as well as include some additional covariates such as player height, weight, and age.</description>
     </item>
     

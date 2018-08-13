@@ -1,14 +1,11 @@
 ---
-title: Predicting NFL Injuries with Stan Part II
-author: ~
+title: "Predicting NFL Injuries with Stan Part II"
+author: "Ryan Travis"
 date: '2018-04-22'
-slug: prediciting-nfl-injuries-with-stan-part-ii
+output: pdf_document
+slug: predicting-nfl-injuries-with-stan-part-ii
+tags: -NFL -Regression -Stan -Statistics -brms
 categories: []
-tags: -NFL
-      -Regression
-      -Stan
-      -Statistics
-      -brms
 ---
 
 [Previously](http://ryantravis.netlify.com/post/stan-basics/) I use data from armchair analysis to build a simple model to predict whether an NFL player would have an injury based only on their position. I restricted the analysis to QBs, RBs, TEs, and WRs. In this post I'd like to expand the model to include 3 years of injury data (which is all I have), as well as include some additional covariates such as player height, weight, and age. The inclusion of multiple years of data makes building the model more tricky since some players will be included in each years' data. 

@@ -1,0 +1,293 @@
+---
+title: Fantasy Football Player Rankings
+author: ~
+date: '2018-08-13'
+slug: fantasy-football-player-rankings
+categories: []
+tags: []
+---
+
+
+
+<p>Accurate prediction of player performance is of immense value to those of use who play fantasy football. With this in mind, I was curious about how well simple prediction models could perform in this context. Conveniently, Sean J. Taylor provided some nice code to make <a href="https://gist.github.com/seanjtaylor/b4d423dad0083cc8cc5b2a9fd1e4e63e">2017 fantasy football projections</a> which we can use to make 2018 predictions. Looking at his predictions for 2017, I’m not overly optimistic about how the models will perform. At any rate, it ought to be fun to see what theys produce.</p>
+<p>My code is mostly identical to Sean’s except I’ve updated some of the year values so that it predicts for the 2018 season and makes use of armchair analysis data from 2017. Since I only changed a few values in the original code to create the analysis datasets, I’ve decided not to display it. However, while running the block of Sean’s code to generate the actual predictions, I encountered some errors having to do with his use of the return() function. Because of this, I’m going to display the code I used to generate the 2018 predictions.</p>
+<div id="predictions" class="section level3">
+<h3>Predictions</h3>
+<p>The code to generate the predictions is a little tricky, since it uses dplyr’s non standard evaluation (it’s generates them within the do() function). You’ll notice within the if else block of code I’ve removed the return function.</p>
+<pre class="r"><code>mySummary &lt;- function(data, lev = NULL, model = NULL) {
+    out &lt;- c(mean(abs(data$obs - data$pred)), 
+                     Evaluation.NDCG(order(data$pred), data$obs))
+    names(out) &lt;- c(&#39;MAE&#39;, &#39;NDCG&#39;)
+    out
+}
+ctrl &lt;- trainControl(method = &#39;cv&#39;,
+                                         number = 10,
+                                         summaryFunction = mySummary)
+
+config &lt;- data_frame(metric = c(&#39;ra&#39;, &#39;trg&#39;, &#39;pa&#39;, &#39;rec_trg&#39;, &#39;ry_ra&#39;, &#39;tdr_ra&#39;, &#39;tdrec_trg&#39;, &#39;recy_trg&#39;, &#39;py_pa&#39;, &#39;tdp_pa&#39;, &#39;ints_pa&#39;, &#39;fuml_ratrg&#39;),
+                                         method = c(&#39;kknn&#39;, &#39;kknn&#39;, &#39;kknn&#39;, rep(&#39;glmnet&#39;, 9)),
+                                         outcome.metric = c(&#39;NDCG&#39;, &#39;NDCG&#39;, &#39;NDCG&#39;, rep(&#39;RMSE&#39;, 9)),
+                                         maximize = c(TRUE, TRUE, TRUE, rep(FALSE, 9)),
+                                         key = 1)
+
+
+positions &lt;- data_frame(pos1 = c(&#39;WR&#39;, &#39;TE&#39;, &#39;RB&#39;, &#39;QB&#39;), key = 1)
+cutoffs &lt;- data_frame(cutoff = 2016:2017, key = 1)
+
+
+preds &lt;- config %&gt;%
+    inner_join(positions) %&gt;%
+    inner_join(cutoffs) %&gt;%
+    group_by(metric, pos1, cutoff) %&gt;% do({
+        my.metric &lt;- first(.$metric)
+        my.pos &lt;- first(.$pos1)
+        my.cutoff &lt;- first(.$cutoff)
+        for.reg &lt;- season.metrics %&gt;%
+            filter(metric == my.metric) %&gt;%
+            dplyr::select(player, seas, value) %&gt;%
+            inner_join(features, by = c(&#39;player&#39;, &#39;seas&#39;)) %&gt;%
+            filter(pos1 == my.pos) %&gt;%
+            ungroup()
+        if (str_detect(my.metric, &#39;pa&#39;) &amp; my.pos != &#39;QB&#39;) {
+            for.reg$yhat &lt;- 0
+            for.reg %&gt;% select(player, seas, yhat = yhat)
+        } else if (str_detect(my.metric, &#39;trg&#39;) &amp; my.pos == &#39;QB&#39;) {
+            for.reg$yhat &lt;- 0
+            for.reg %&gt;% select(player, seas, yhat = yhat)
+        } else if (str_detect(my.metric, &#39;ra&#39;) &amp; my.pos %in% c(&#39;TE&#39;, &#39;WR&#39;)) {
+            for.reg$yhat &lt;- 0
+            for.reg %&gt;% select(player, seas, yhat = yhat)
+        } else {
+        X &lt;- model.matrix( ~ 0 + ., for.reg %&gt;% dplyr::select(-player, -value, -pos1))
+        nzv &lt;- nearZeroVar(X)
+        X &lt;- X[, -nzv]
+        y &lt;- with(for.reg, value)
+        trainable &lt;- !is.na(y) &amp; (for.reg$seas &lt;= my.cutoff)
+        fit &lt;- train(X[trainable,],y[trainable],
+                                 metric = first(.$outcome.metric),
+                                 method = first(.$method),
+                                 maximize = first(.$maximize),
+                                 trControl = ctrl,
+                                 preProcess = c(&quot;center&quot;, &quot;scale&quot;))
+        for.reg$yhat &lt;- predict(fit, X)
+        for.reg %&gt;% dplyr::select(player, seas, yhat = yhat)
+        }
+    })</code></pre>
+</div>
+<div id="rankings-based-on-predictions" class="section level3">
+<h3>Rankings based on Predictions</h3>
+<pre class="r"><code>rnks &lt;- preds %&gt;%
+    spread(metric, yhat) %&gt;%
+    mutate(py = pa * py_pa,
+                 tdp = pa * tdp_pa,
+                 ints = pa * ints_pa,
+                 rec = trg * rec_trg,
+                 recy = trg * recy_trg,
+                 ry = ra * ry_ra,
+                 td = trg * tdrec_trg+ ra * tdr_ra,
+                 fuml = fuml_ratrg * (ra + pa + trg),
+                 fpts = py / 25 
+                 + recy / 15 
+                 + ry / 10 
+                 + rec * 0.5 
+                 + (td + tdp) * 6 
+                 + ints * -2 
+                 + fuml * -2) %&gt;%
+    left_join(player %&gt;% select(player, pos1, fname, lname)) %&gt;%
+    dplyr::select(seas, player, fname, lname, pos1, fpts) %&gt;%
+    group_by(cutoff, seas, pos1) %&gt;%
+    arrange(-fpts) %&gt;%
+    mutate(rnk = row_number())</code></pre>
+<pre><code>## Joining, by = c(&quot;pos1&quot;, &quot;player&quot;)</code></pre>
+<pre><code>## Adding missing grouping variables: `cutoff`</code></pre>
+<div id="running-back-rankings" class="section level4">
+<h4>Running Back Rankings</h4>
+<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;RB&#39;, seas == 2018, cutoff == 2017)  %&gt;% print(n = 30)</code></pre>
+<pre><code>## # A tibble: 197 x 8
+## # Groups:   cutoff, seas, pos1 [1]
+##    cutoff  seas player        fname     lname     pos1   fpts   rnk
+##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;         &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
+##  1   2017  2018 LF-0650       Leonard   Fournette RB      222     1
+##  2   2017  2018 LB-0250       Le&#39;Veon   Bell      RB      218     2
+##  3   2017  2018 CH-5000       Carlos    Hyde      RB      200     3
+##  4   2017  2018 LM-1000       LeSean    McCoy     RB      199     4
+##  5   2017  2018 TG-1950       Todd      Gurley    RB      198     5
+##  6   2017  2018 DM-4300       DeMarco   Murray    RB      198     6
+##  7   2017  2018 KH-2850       Kareem    Hunt      RB      192     7
+##  8   2017  2018 FG-0200       Frank     Gore      RB      182     8
+##  9   2017  2018 JH-5575       Jordan    Howard    RB      168     9
+## 10   2017  2018 Sony Michel   &lt;NA&gt;      &lt;NA&gt;      RB      155    10
+## 11   2017  2018 MI-0100       Mark      Ingram    RB      149    11
+## 12   2017  2018 AC-2150       Alex      Collins   RB      148    12
+## 13   2017  2018 CM-1225       Christian McCaffrey RB      148    13
+## 14   2017  2018 MG-1150       Melvin    Gordon    RB      148    14
+## 15   2017  2018 LM-1150       Lamar     Miller    RB      147    15
+## 16   2017  2018 JA-0450       Jay       Ajayi     RB      145    16
+## 17   2017  2018 DF-1875       Devonta   Freeman   RB      143    17
+## 18   2017  2018 ML-2500       Marshawn  Lynch     RB      143    18
+## 19   2017  2018 Rashaad Penny &lt;NA&gt;      &lt;NA&gt;      RB      143    19
+## 20   2017  2018 Derrius Guice &lt;NA&gt;      &lt;NA&gt;      RB      141    20
+## 21   2017  2018 BP-1200       Bilal     Powell    RB      139    21
+## 22   2017  2018 IC-0300       Isaiah    Crowell   RB      138    22
+## 23   2017  2018 MF-1300       Matt      Forte     RB      135    23
+## 24   2017  2018 Royce Freeman &lt;NA&gt;      &lt;NA&gt;      RB      133    24
+## 25   2017  2018 LM-1850       Latavius  Murray    RB      131    25
+## 26   2017  2018 Nick Chubb    &lt;NA&gt;      &lt;NA&gt;      RB      131    26
+## 27   2017  2018 KD-1462       Kenyan    Drake     RB      130    27
+## 28   2017  2018 JS-6700       Jonathan  Stewart   RB      129    28
+## 29   2017  2018 DH-2450       Derrick   Henry     RB      129    29
+## 30   2017  2018 AP-0700       Adrian    Peterson  RB      129    30
+## # ... with 167 more rows</code></pre>
+</div>
+<div id="wide-receiver-rankings" class="section level4">
+<h4>Wide Receiver Rankings</h4>
+<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;WR&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
+<pre><code>## # A tibble: 268 x 8
+## # Groups:   cutoff, seas, pos1 [1]
+##    cutoff  seas player  fname     lname          pos1   fpts   rnk
+##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;     &lt;chr&gt;          &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
+##  1   2017  2018 AB-3500 Antonio   Brown          WR    176       1
+##  2   2017  2018 JJ-4700 Julio     Jones          WR    172       2
+##  3   2017  2018 LF-0200 Larry     Fitzgerald     WR    167       3
+##  4   2017  2018 ME-0600 Mike      Evans          WR    162       4
+##  5   2017  2018 DH-3950 DeAndre   Hopkins        WR    152       5
+##  6   2017  2018 DB-5300 Dez       Bryant         WR    151       6
+##  7   2017  2018 TH-1850 Ty        Hilton         WR    147       7
+##  8   2017  2018 JL-0215 Jarvis    Landry         WR    147       8
+##  9   2017  2018 DT-0900 Demaryius Thomas         WR    145       9
+## 10   2017  2018 AT-0350 Adam      Thielen        WR    140      10
+## 11   2017  2018 RM-1500 Rishard   Matthews       WR    138      11
+## 12   2017  2018 AG-1500 A.J.      Green          WR    136      12
+## 13   2017  2018 GT-0100 Golden    Tate           WR    131      13
+## 14   2017  2018 JS-4750 Juju      Smith-Schuster WR    126      14
+## 15   2017  2018 DA-0212 Davante   Adams          WR    122      15
+## 16   2017  2018 AJ-0430 Alshon    Jeffery        WR    121      16
+## 17   2017  2018 PG-0100 Pierre    Garcon         WR    121      17
+## 18   2017  2018 MC-2900 Michael   Crabtree       WR    118      18
+## 19   2017  2018 DB-0500 Doug      Baldwin        WR    118      19
+## 20   2017  2018 MB-4550 Martavis  Bryant         WR    115      20
+## 21   2017  2018 MW-0500 Mike      Wallace        WR    112      21
+## 22   2017  2018 BC-2325 Brandin   Cooks          WR    112      22
+## 23   2017  2018 TH-1750 Tyreek    Hill           WR    109      23
+## 24   2017  2018 MT-0875 Michael   Thomas         WR    108      24
+## 25   2017  2018 KA-0650 Keenan    Allen          WR    106      25
+## 26   2017  2018 MJ-2250 Marvin    Jones          WR    105      26
+## 27   2017  2018 SD-0537 Stefon    Diggs          WR    104      27
+## 28   2017  2018 RC-1500 Randall   Cobb           WR    103      28
+## 29   2017  2018 AR-1250 Allen     Robinson       WR    102      29
+## 30   2017  2018 TL-1025 Tyler     Lockett        WR     97.6    30
+## # ... with 238 more rows</code></pre>
+</div>
+<div id="quarterback-rankings" class="section level4">
+<h4>Quarterback Rankings</h4>
+<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;QB&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
+<pre><code>## # A tibble: 93 x 8
+## # Groups:   cutoff, seas, pos1 [1]
+##    cutoff  seas player      fname   lname          pos1   fpts   rnk
+##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;   &lt;chr&gt;          &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
+##  1   2017  2018 CN-0500     Cam     Newton         QB      333     1
+##  2   2017  2018 DB-3800     Drew    Brees          QB      326     2
+##  3   2017  2018 MS-4100     Matthew Stafford       QB      324     3
+##  4   2017  2018 TB-2300     Tom     Brady          QB      323     4
+##  5   2017  2018 MR-2500     Matt    Ryan           QB      322     5
+##  6   2017  2018 PR-0300     Philip  Rivers         QB      319     6
+##  7   2017  2018 RW-3850     Russell Wilson         QB      316     7
+##  8   2017  2018 BB-2425     Blake   Bortles        QB      305     8
+##  9   2017  2018 KC-2350     Kirk    Cousins        QB      297     9
+## 10   2017  2018 AD-0100     Andy    Dalton         QB      291    10
+## 11   2017  2018 JG-1850     Jared   Goff           QB      289    11
+## 12   2017  2018 DP-2037     Dak     Prescott       QB      288    12
+## 13   2017  2018 DC-0725     Derek   Carr           QB      287    13
+## 14   2017  2018 EM-0200     Eli     Manning        QB      273    14
+## 15   2017  2018 JF-1900     Joe     Flacco         QB      273    15
+## 16   2017  2018 JC-6200     Jay     Cutler         QB      273    16
+## 17   2017  2018 JW-5650     Jameis  Winston        QB      255    17
+## 18   2017  2018 BR-1100     Ben     Roethlisberger QB      254    18
+## 19   2017  2018 AR-1300     Aaron   Rodgers        QB      253    19
+## 20   2017  2018 AS-1600     Alex    Smith          QB      250    20
+## 21   2017  2018 CP-0500     Carson  Palmer         QB      241    21
+## 22   2017  2018 CW-1425     Carson  Wentz          QB      238    22
+## 23   2017  2018 DK-0875     DeShone Kizer          QB      222    23
+## 24   2017  2018 TT-0500     Tyrod   Taylor         QB      216    24
+## 25   2017  2018 JB-5725     Jacoby  Brissett       QB      213    25
+## 26   2017  2018 Sam Darnold &lt;NA&gt;    &lt;NA&gt;           QB      211    26
+## 27   2017  2018 RF-0500     Ryan    Fitzpatrick    QB      210    27
+## 28   2017  2018 CK-0250     Case    Keenum         QB      206    28
+## 29   2017  2018 MM-0912     Marcus  Mariota        QB      203    29
+## 30   2017  2018 Josh Allen  &lt;NA&gt;    &lt;NA&gt;           QB      201    30
+## # ... with 63 more rows</code></pre>
+</div>
+<div id="tight-end-rankings" class="section level4">
+<h4>Tight End Rankings</h4>
+<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;TE&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
+<pre><code>## # A tibble: 133 x 8
+## # Groups:   cutoff, seas, pos1 [1]
+##    cutoff  seas player  fname    lname            pos1   fpts   rnk
+##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;            &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
+##  1   2017  2018 TK-0150 Travis   Kelce            TE    146       1
+##  2   2017  2018 ZE-0100 Zach     Ertz             TE    131       2
+##  3   2017  2018 JG-2900 Jimmy    Graham           TE    129       3
+##  4   2017  2018 RG-2200 Rob      Gronkowski       TE    122       4
+##  5   2017  2018 EE-0400 Evan     Engram           TE    118       5
+##  6   2017  2018 JW-6000 Jason    Witten           TE    107       6
+##  7   2017  2018 KR-1200 Kyle     Rudolph          TE     94.5     7
+##  8   2017  2018 VD-0100 Vernon   Davis            TE     94.5     8
+##  9   2017  2018 JD-2550 Jack     Doyle            TE     92.3     9
+## 10   2017  2018 JC-4300 Jared    Cook             TE     90.6    10
+## 11   2017  2018 AG-0500 Antonio  Gates            TE     90.6    11
+## 12   2017  2018 EE-0050 Eric     Ebron            TE     87.6    12
+## 13   2017  2018 CC-2100 Charles  Clay             TE     82.7    13
+## 14   2017  2018 DW-0500 Delanie  Walker           TE     72.5    14
+## 15   2017  2018 TE-0300 Tyler    Eifert           TE     70.7    15
+## 16   2017  2018 OH-0250 O.J.     Howard           TE     70.6    16
+## 17   2017  2018 CB-2775 Cameron  Brate            TE     68.7    17
+## 18   2017  2018 HH-0225 Hunter   Henry            TE     68.5    18
+## 19   2017  2018 JS-4550 Jonnu    Smith            TE     67.9    19
+## 20   2017  2018 JR-1150 Jordan   Reed             TE     64.6    20
+## 21   2017  2018 JT-2000 Julius   Thomas           TE     63.5    21
+## 22   2017  2018 LK-0200 Lance    Kendricks        TE     63.4    22
+## 23   2017  2018 BW-0700 Benjamin Watson           TE     62.1    23
+## 24   2017  2018 DN-1225 David    Njoku            TE     61.7    24
+## 25   2017  2018 CF-0650 Coby     Fleener          TE     55.8    25
+## 26   2017  2018 AS-0550 Austin   Seferian-Jenkins TE     54.4    26
+## 27   2017  2018 RS-0687 Ricky    Seals-Jones      TE     50.0    27
+## 28   2017  2018 JG-3700 Jermaine Gresham          TE     49.7    28
+## 29   2017  2018 AH-3650 Austin   Hooper           TE     49.0    29
+## 30   2017  2018 ML-1500 Marcedes Lewis            TE     48.7    30
+## # ... with 103 more rows</code></pre>
+</div>
+</div>
+<div id="model-performance-plots" class="section level3">
+<h3>Model Performance Plots</h3>
+<pre class="r"><code>truth &lt;- season.metrics %&gt;%
+    filter(seas == 2017) %&gt;%
+    dplyr::select(-career.year, -lst, -avg) %&gt;%
+    spread(metric, value) %&gt;%
+    mutate(fpts = py / 25 
+                 + recy / 15 
+                 + ry / 10 
+                 + rec * 0.5 
+                 + (tdr + tdrec + tdp) * 6 
+                 + ints * -2 
+                 + fuml * -2) %&gt;%
+    arrange(-fpts) %&gt;%
+    mutate(rnk = row_number())
+
+rnks %&gt;%
+    filter(cutoff == 2016, seas == 2017) %&gt;%
+    inner_join(truth %&gt;% dplyr::select(player, seas, fpts.true = fpts)) %&gt;%
+    ggplot(aes(x = fpts, y = fpts.true)) + 
+    geom_point() +
+    facet_wrap(&#39;pos1&#39;, scales = &#39;free&#39;) +
+    theme_bw() +
+    geom_abline() +
+    xlab(&#39;Projected Points&#39;) +
+    ylab(&#39;Actual Points&#39;)</code></pre>
+<pre><code>## Joining, by = c(&quot;seas&quot;, &quot;player&quot;)</code></pre>
+<p><img src="/post/2018-08-13-fantasy-football-player-rankings_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+</div>
+<div id="comments" class="section level3">
+<h3>Comments</h3>
+<p>These predictions do not seem very good at all to me. Looking at the last plot you can see the immense variability about the 45 degree line, some of the estimates are off by very large amounts. This is maybe not surprising when you consider the very limited basis on which the “opportunity” (rushing attempts, etc) projections are made. There is a lot of information that is not captured by previous data. Allowing for smooth functions of the predictors in the rate models would probably improve the performance as well.</p>
+<p>Ultimately, in my opinion a better approach to fantasy football player projection is something like what is done at <a href="https://fantasyfootballanalytics.net/2018/07/2018-fantasy-football-projections.html">Fantasy Football Analytics</a>. The approach they take is to combine the projections of lots of analysts via some weighting scheme. This would allow the incorporation of a lot more information than the models above, as well as averaging over particular analyst biases.</p>
+</div>
