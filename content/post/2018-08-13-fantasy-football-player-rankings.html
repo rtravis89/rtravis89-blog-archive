@@ -13,7 +13,7 @@ tags: []
 <p>My code is mostly identical to Sean’s except I’ve updated some of the year values so that it predicts for the 2018 season and makes use of armchair analysis data from 2017. Since I only changed a few values in the original code to create the analysis datasets, I’ve decided not to display it. However, while running the block of Sean’s code to generate the actual predictions, I encountered some errors having to do with his use of the return() function. Because of this, I’m going to display the code I used to generate the 2018 predictions.</p>
 <div id="predictions" class="section level3">
 <h3>Predictions</h3>
-<p>The code to generate the predictions is a little tricky, since it uses dplyr’s non standard evaluation (it’s generates them within the do() function). You’ll notice within the if else block of code I’ve removed the return function.</p>
+<p>The code to generate the predictions is a little tricky, since it uses dplyr’s non standard evaluation (it’s generates them within the do() function). You’ll notice within the if else block of code I’ve removed the return function. The code builds separate models for rushing attempts, passing attempts, receiving yards, etc. for a total of 12 models. The first three metrics, rushing attempts, receiving targets, and passing attempts are the “opportunity” metrics and are modeled using a k-nearest neighbors algorithm. The justification for this that Sean provides is that penalized linear models used for other 9 rate metics would “shrink” the predictions too much (push them toward the average). The ultimate projections for player performance are heavily influenced by the opportunity projections, so it’s very important to get them right.</p>
 <pre class="r"><code>mySummary &lt;- function(data, lev = NULL, model = NULL) {
     out &lt;- c(mean(abs(data$obs - data$pred)), 
                      Evaluation.NDCG(order(data$pred), data$obs))
@@ -102,41 +102,41 @@ preds &lt;- config %&gt;%
 <pre><code>## Adding missing grouping variables: `cutoff`</code></pre>
 <div id="running-back-rankings" class="section level4">
 <h4>Running Back Rankings</h4>
-<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;RB&#39;, seas == 2018, cutoff == 2017)  %&gt;% print(n = 30)</code></pre>
+<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;RB&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
 <pre><code>## # A tibble: 197 x 8
 ## # Groups:   cutoff, seas, pos1 [1]
-##    cutoff  seas player        fname     lname     pos1   fpts   rnk
-##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;         &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
-##  1   2017  2018 LF-0650       Leonard   Fournette RB      222     1
-##  2   2017  2018 LB-0250       Le&#39;Veon   Bell      RB      218     2
-##  3   2017  2018 CH-5000       Carlos    Hyde      RB      200     3
-##  4   2017  2018 LM-1000       LeSean    McCoy     RB      199     4
-##  5   2017  2018 TG-1950       Todd      Gurley    RB      198     5
-##  6   2017  2018 DM-4300       DeMarco   Murray    RB      198     6
-##  7   2017  2018 KH-2850       Kareem    Hunt      RB      192     7
-##  8   2017  2018 FG-0200       Frank     Gore      RB      182     8
-##  9   2017  2018 JH-5575       Jordan    Howard    RB      168     9
-## 10   2017  2018 Sony Michel   &lt;NA&gt;      &lt;NA&gt;      RB      155    10
-## 11   2017  2018 MI-0100       Mark      Ingram    RB      149    11
-## 12   2017  2018 AC-2150       Alex      Collins   RB      148    12
-## 13   2017  2018 CM-1225       Christian McCaffrey RB      148    13
-## 14   2017  2018 MG-1150       Melvin    Gordon    RB      148    14
-## 15   2017  2018 LM-1150       Lamar     Miller    RB      147    15
-## 16   2017  2018 JA-0450       Jay       Ajayi     RB      145    16
-## 17   2017  2018 DF-1875       Devonta   Freeman   RB      143    17
-## 18   2017  2018 ML-2500       Marshawn  Lynch     RB      143    18
-## 19   2017  2018 Rashaad Penny &lt;NA&gt;      &lt;NA&gt;      RB      143    19
-## 20   2017  2018 Derrius Guice &lt;NA&gt;      &lt;NA&gt;      RB      141    20
-## 21   2017  2018 BP-1200       Bilal     Powell    RB      139    21
-## 22   2017  2018 IC-0300       Isaiah    Crowell   RB      138    22
-## 23   2017  2018 MF-1300       Matt      Forte     RB      135    23
-## 24   2017  2018 Royce Freeman &lt;NA&gt;      &lt;NA&gt;      RB      133    24
-## 25   2017  2018 LM-1850       Latavius  Murray    RB      131    25
-## 26   2017  2018 Nick Chubb    &lt;NA&gt;      &lt;NA&gt;      RB      131    26
-## 27   2017  2018 KD-1462       Kenyan    Drake     RB      130    27
-## 28   2017  2018 JS-6700       Jonathan  Stewart   RB      129    28
-## 29   2017  2018 DH-2450       Derrick   Henry     RB      129    29
-## 30   2017  2018 AP-0700       Adrian    Peterson  RB      129    30
+##    cutoff  seas player          fname     lname     pos1   fpts   rnk
+##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;           &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
+##  1   2017  2018 LB-0250         Le&#39;Veon   Bell      RB      215     1
+##  2   2017  2018 LF-0650         Leonard   Fournette RB      205     2
+##  3   2017  2018 DM-4300         DeMarco   Murray    RB      203     3
+##  4   2017  2018 LM-1000         LeSean    McCoy     RB      200     4
+##  5   2017  2018 FG-0200         Frank     Gore      RB      181     5
+##  6   2017  2018 TG-1950         Todd      Gurley    RB      177     6
+##  7   2017  2018 MI-0100         Mark      Ingram    RB      172     7
+##  8   2017  2018 JH-5575         Jordan    Howard    RB      158     8
+##  9   2017  2018 KH-2850         Kareem    Hunt      RB      157     9
+## 10   2017  2018 DF-1875         Devonta   Freeman   RB      150    10
+## 11   2017  2018 CH-5000         Carlos    Hyde      RB      150    11
+## 12   2017  2018 JA-0450         Jay       Ajayi     RB      142    12
+## 13   2017  2018 LM-1150         Lamar     Miller    RB      141    13
+## 14   2017  2018 MG-1150         Melvin    Gordon    RB      140    14
+## 15   2017  2018 IC-0300         Isaiah    Crowell   RB      139    15
+## 16   2017  2018 Ronald Jones II &lt;NA&gt;      &lt;NA&gt;      RB      133    16
+## 17   2017  2018 CM-1225         Christian McCaffrey RB      133    17
+## 18   2017  2018 LM-1850         Latavius  Murray    RB      132    18
+## 19   2017  2018 MF-1300         Matt      Forte     RB      131    19
+## 20   2017  2018 AK-0050         Alvin     Kamara    RB      130    20
+## 21   2017  2018 JS-6700         Jonathan  Stewart   RB      130    21
+## 22   2017  2018 Kerryon Johnson &lt;NA&gt;      &lt;NA&gt;      RB      129    22
+## 23   2017  2018 DH-2450         Derrick   Henry     RB      128    23
+## 24   2017  2018 Royce Freeman   &lt;NA&gt;      &lt;NA&gt;      RB      128    24
+## 25   2017  2018 Sony Michel     &lt;NA&gt;      &lt;NA&gt;      RB      127    25
+## 26   2017  2018 KD-1462         Kenyan    Drake     RB      127    26
+## 27   2017  2018 JM-3450         Jerick    McKinnon  RB      125    27
+## 28   2017  2018 EE-0250         Ezekiel   Elliott   RB      125    28
+## 29   2017  2018 DJ-1850         Duke      Johnson   RB      124    29
+## 30   2017  2018 ML-2500         Marshawn  Lynch     RB      123    30
 ## # ... with 167 more rows</code></pre>
 </div>
 <div id="wide-receiver-rankings" class="section level4">
@@ -146,36 +146,36 @@ preds &lt;- config %&gt;%
 ## # Groups:   cutoff, seas, pos1 [1]
 ##    cutoff  seas player  fname     lname          pos1   fpts   rnk
 ##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;     &lt;chr&gt;          &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
-##  1   2017  2018 AB-3500 Antonio   Brown          WR    176       1
-##  2   2017  2018 JJ-4700 Julio     Jones          WR    172       2
-##  3   2017  2018 LF-0200 Larry     Fitzgerald     WR    167       3
-##  4   2017  2018 ME-0600 Mike      Evans          WR    162       4
-##  5   2017  2018 DH-3950 DeAndre   Hopkins        WR    152       5
-##  6   2017  2018 DB-5300 Dez       Bryant         WR    151       6
-##  7   2017  2018 TH-1850 Ty        Hilton         WR    147       7
-##  8   2017  2018 JL-0215 Jarvis    Landry         WR    147       8
-##  9   2017  2018 DT-0900 Demaryius Thomas         WR    145       9
-## 10   2017  2018 AT-0350 Adam      Thielen        WR    140      10
-## 11   2017  2018 RM-1500 Rishard   Matthews       WR    138      11
-## 12   2017  2018 AG-1500 A.J.      Green          WR    136      12
-## 13   2017  2018 GT-0100 Golden    Tate           WR    131      13
-## 14   2017  2018 JS-4750 Juju      Smith-Schuster WR    126      14
-## 15   2017  2018 DA-0212 Davante   Adams          WR    122      15
-## 16   2017  2018 AJ-0430 Alshon    Jeffery        WR    121      16
-## 17   2017  2018 PG-0100 Pierre    Garcon         WR    121      17
-## 18   2017  2018 MC-2900 Michael   Crabtree       WR    118      18
-## 19   2017  2018 DB-0500 Doug      Baldwin        WR    118      19
-## 20   2017  2018 MB-4550 Martavis  Bryant         WR    115      20
-## 21   2017  2018 MW-0500 Mike      Wallace        WR    112      21
-## 22   2017  2018 BC-2325 Brandin   Cooks          WR    112      22
-## 23   2017  2018 TH-1750 Tyreek    Hill           WR    109      23
-## 24   2017  2018 MT-0875 Michael   Thomas         WR    108      24
-## 25   2017  2018 KA-0650 Keenan    Allen          WR    106      25
-## 26   2017  2018 MJ-2250 Marvin    Jones          WR    105      26
-## 27   2017  2018 SD-0537 Stefon    Diggs          WR    104      27
-## 28   2017  2018 RC-1500 Randall   Cobb           WR    103      28
-## 29   2017  2018 AR-1250 Allen     Robinson       WR    102      29
-## 30   2017  2018 TL-1025 Tyler     Lockett        WR     97.6    30
+##  1   2017  2018 JJ-4700 Julio     Jones          WR      179     1
+##  2   2017  2018 AB-3500 Antonio   Brown          WR      177     2
+##  3   2017  2018 LF-0200 Larry     Fitzgerald     WR      165     3
+##  4   2017  2018 ME-0600 Mike      Evans          WR      149     4
+##  5   2017  2018 TH-1850 Ty        Hilton         WR      145     5
+##  6   2017  2018 JL-0215 Jarvis    Landry         WR      142     6
+##  7   2017  2018 RM-1500 Rishard   Matthews       WR      139     7
+##  8   2017  2018 DB-5300 Dez       Bryant         WR      132     8
+##  9   2017  2018 AG-1500 A.J.      Green          WR      131     9
+## 10   2017  2018 GT-0100 Golden    Tate           WR      131    10
+## 11   2017  2018 BC-2325 Brandin   Cooks          WR      128    11
+## 12   2017  2018 DT-0900 Demaryius Thomas         WR      122    12
+## 13   2017  2018 DH-3950 DeAndre   Hopkins        WR      122    13
+## 14   2017  2018 AT-0350 Adam      Thielen        WR      119    14
+## 15   2017  2018 PG-0100 Pierre    Garcon         WR      119    15
+## 16   2017  2018 MC-2900 Michael   Crabtree       WR      118    16
+## 17   2017  2018 DB-0500 Doug      Baldwin        WR      117    17
+## 18   2017  2018 JS-4750 Juju      Smith-Schuster WR      115    18
+## 19   2017  2018 CK-1300 Cooper    Kupp           WR      115    19
+## 20   2017  2018 MB-4550 Martavis  Bryant         WR      112    20
+## 21   2017  2018 MT-0875 Michael   Thomas         WR      112    21
+## 22   2017  2018 MW-0500 Mike      Wallace        WR      111    22
+## 23   2017  2018 JN-0900 Jordy     Nelson         WR      107    23
+## 24   2017  2018 TH-1750 Tyreek    Hill           WR      106    24
+## 25   2017  2018 SD-0537 Stefon    Diggs          WR      106    25
+## 26   2017  2018 MJ-2250 Marvin    Jones          WR      105    26
+## 27   2017  2018 AJ-0430 Alshon    Jeffery        WR      104    27
+## 28   2017  2018 RC-1500 Randall   Cobb           WR      102    28
+## 29   2017  2018 BL-0100 Brandon   LaFell         WR      101    29
+## 30   2017  2018 AR-1250 Allen     Robinson       WR      101    30
 ## # ... with 238 more rows</code></pre>
 </div>
 <div id="quarterback-rankings" class="section level4">
@@ -183,38 +183,38 @@ preds &lt;- config %&gt;%
 <pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;QB&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
 <pre><code>## # A tibble: 93 x 8
 ## # Groups:   cutoff, seas, pos1 [1]
-##    cutoff  seas player      fname   lname          pos1   fpts   rnk
-##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;   &lt;chr&gt;          &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
-##  1   2017  2018 CN-0500     Cam     Newton         QB      333     1
-##  2   2017  2018 DB-3800     Drew    Brees          QB      326     2
-##  3   2017  2018 MS-4100     Matthew Stafford       QB      324     3
-##  4   2017  2018 TB-2300     Tom     Brady          QB      323     4
-##  5   2017  2018 MR-2500     Matt    Ryan           QB      322     5
-##  6   2017  2018 PR-0300     Philip  Rivers         QB      319     6
-##  7   2017  2018 RW-3850     Russell Wilson         QB      316     7
-##  8   2017  2018 BB-2425     Blake   Bortles        QB      305     8
-##  9   2017  2018 KC-2350     Kirk    Cousins        QB      297     9
-## 10   2017  2018 AD-0100     Andy    Dalton         QB      291    10
-## 11   2017  2018 JG-1850     Jared   Goff           QB      289    11
-## 12   2017  2018 DP-2037     Dak     Prescott       QB      288    12
-## 13   2017  2018 DC-0725     Derek   Carr           QB      287    13
-## 14   2017  2018 EM-0200     Eli     Manning        QB      273    14
-## 15   2017  2018 JF-1900     Joe     Flacco         QB      273    15
-## 16   2017  2018 JC-6200     Jay     Cutler         QB      273    16
-## 17   2017  2018 JW-5650     Jameis  Winston        QB      255    17
-## 18   2017  2018 BR-1100     Ben     Roethlisberger QB      254    18
-## 19   2017  2018 AR-1300     Aaron   Rodgers        QB      253    19
-## 20   2017  2018 AS-1600     Alex    Smith          QB      250    20
-## 21   2017  2018 CP-0500     Carson  Palmer         QB      241    21
-## 22   2017  2018 CW-1425     Carson  Wentz          QB      238    22
-## 23   2017  2018 DK-0875     DeShone Kizer          QB      222    23
-## 24   2017  2018 TT-0500     Tyrod   Taylor         QB      216    24
-## 25   2017  2018 JB-5725     Jacoby  Brissett       QB      213    25
-## 26   2017  2018 Sam Darnold &lt;NA&gt;    &lt;NA&gt;           QB      211    26
-## 27   2017  2018 RF-0500     Ryan    Fitzpatrick    QB      210    27
-## 28   2017  2018 CK-0250     Case    Keenum         QB      206    28
-## 29   2017  2018 MM-0912     Marcus  Mariota        QB      203    29
-## 30   2017  2018 Josh Allen  &lt;NA&gt;    &lt;NA&gt;           QB      201    30
+##    cutoff  seas player        fname   lname          pos1   fpts   rnk
+##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;         &lt;chr&gt;   &lt;chr&gt;          &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
+##  1   2017  2018 CN-0500       Cam     Newton         QB      328     1
+##  2   2017  2018 DB-3800       Drew    Brees          QB      326     2
+##  3   2017  2018 TB-2300       Tom     Brady          QB      324     3
+##  4   2017  2018 MS-4100       Matthew Stafford       QB      324     4
+##  5   2017  2018 MR-2500       Matt    Ryan           QB      323     5
+##  6   2017  2018 BB-2425       Blake   Bortles        QB      320     6
+##  7   2017  2018 PR-0300       Philip  Rivers         QB      319     7
+##  8   2017  2018 RW-3850       Russell Wilson         QB      311     8
+##  9   2017  2018 KC-2350       Kirk    Cousins        QB      308     9
+## 10   2017  2018 JG-1850       Jared   Goff           QB      293    10
+## 11   2017  2018 DC-0725       Derek   Carr           QB      289    11
+## 12   2017  2018 DP-2037       Dak     Prescott       QB      287    12
+## 13   2017  2018 EM-0200       Eli     Manning        QB      284    13
+## 14   2017  2018 BR-1100       Ben     Roethlisberger QB      281    14
+## 15   2017  2018 AD-0100       Andy    Dalton         QB      280    15
+## 16   2017  2018 JF-1900       Joe     Flacco         QB      274    16
+## 17   2017  2018 JC-6200       Jay     Cutler         QB      272    17
+## 18   2017  2018 TT-0500       Tyrod   Taylor         QB      267    18
+## 19   2017  2018 AR-1300       Aaron   Rodgers        QB      265    19
+## 20   2017  2018 CP-0500       Carson  Palmer         QB      254    20
+## 21   2017  2018 AS-1600       Alex    Smith          QB      247    21
+## 22   2017  2018 JW-5650       Jameis  Winston        QB      235    22
+## 23   2017  2018 CW-1425       Carson  Wentz          QB      227    23
+## 24   2017  2018 DK-0875       DeShone Kizer          QB      223    24
+## 25   2017  2018 Sam Darnold   &lt;NA&gt;    &lt;NA&gt;           QB      217    25
+## 26   2017  2018 Josh Rosen    &lt;NA&gt;    &lt;NA&gt;           QB      213    26
+## 27   2017  2018 RF-0500       Ryan    Fitzpatrick    QB      210    27
+## 28   2017  2018 JB-5725       Jacoby  Brissett       QB      210    28
+## 29   2017  2018 MM-0912       Marcus  Mariota        QB      201    29
+## 30   2017  2018 Lamar Jackson &lt;NA&gt;    &lt;NA&gt;           QB      201    30
 ## # ... with 63 more rows</code></pre>
 </div>
 <div id="tight-end-rankings" class="section level4">
@@ -222,38 +222,38 @@ preds &lt;- config %&gt;%
 <pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;TE&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
 <pre><code>## # A tibble: 133 x 8
 ## # Groups:   cutoff, seas, pos1 [1]
-##    cutoff  seas player  fname    lname            pos1   fpts   rnk
-##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;            &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
-##  1   2017  2018 TK-0150 Travis   Kelce            TE    146       1
-##  2   2017  2018 ZE-0100 Zach     Ertz             TE    131       2
-##  3   2017  2018 JG-2900 Jimmy    Graham           TE    129       3
-##  4   2017  2018 RG-2200 Rob      Gronkowski       TE    122       4
-##  5   2017  2018 EE-0400 Evan     Engram           TE    118       5
-##  6   2017  2018 JW-6000 Jason    Witten           TE    107       6
-##  7   2017  2018 KR-1200 Kyle     Rudolph          TE     94.5     7
-##  8   2017  2018 VD-0100 Vernon   Davis            TE     94.5     8
-##  9   2017  2018 JD-2550 Jack     Doyle            TE     92.3     9
-## 10   2017  2018 JC-4300 Jared    Cook             TE     90.6    10
-## 11   2017  2018 AG-0500 Antonio  Gates            TE     90.6    11
-## 12   2017  2018 EE-0050 Eric     Ebron            TE     87.6    12
-## 13   2017  2018 CC-2100 Charles  Clay             TE     82.7    13
-## 14   2017  2018 DW-0500 Delanie  Walker           TE     72.5    14
-## 15   2017  2018 TE-0300 Tyler    Eifert           TE     70.7    15
-## 16   2017  2018 OH-0250 O.J.     Howard           TE     70.6    16
-## 17   2017  2018 CB-2775 Cameron  Brate            TE     68.7    17
-## 18   2017  2018 HH-0225 Hunter   Henry            TE     68.5    18
-## 19   2017  2018 JS-4550 Jonnu    Smith            TE     67.9    19
-## 20   2017  2018 JR-1150 Jordan   Reed             TE     64.6    20
-## 21   2017  2018 JT-2000 Julius   Thomas           TE     63.5    21
-## 22   2017  2018 LK-0200 Lance    Kendricks        TE     63.4    22
-## 23   2017  2018 BW-0700 Benjamin Watson           TE     62.1    23
-## 24   2017  2018 DN-1225 David    Njoku            TE     61.7    24
-## 25   2017  2018 CF-0650 Coby     Fleener          TE     55.8    25
-## 26   2017  2018 AS-0550 Austin   Seferian-Jenkins TE     54.4    26
-## 27   2017  2018 RS-0687 Ricky    Seals-Jones      TE     50.0    27
-## 28   2017  2018 JG-3700 Jermaine Gresham          TE     49.7    28
-## 29   2017  2018 AH-3650 Austin   Hooper           TE     49.0    29
-## 30   2017  2018 ML-1500 Marcedes Lewis            TE     48.7    30
+##    cutoff  seas player         fname     lname      pos1   fpts   rnk
+##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;          &lt;chr&gt;     &lt;chr&gt;      &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
+##  1   2017  2018 TK-0150        Travis    Kelce      TE    148       1
+##  2   2017  2018 JG-2900        Jimmy     Graham     TE    137       2
+##  3   2017  2018 ZE-0100        Zach      Ertz       TE    136       3
+##  4   2017  2018 EE-0400        Evan      Engram     TE    134       4
+##  5   2017  2018 JW-6000        Jason     Witten     TE    110       5
+##  6   2017  2018 KR-1200        Kyle      Rudolph    TE    107       6
+##  7   2017  2018 RG-2200        Rob       Gronkowski TE    102       7
+##  8   2017  2018 AG-0500        Antonio   Gates      TE    101       8
+##  9   2017  2018 EE-0050        Eric      Ebron      TE     90.6     9
+## 10   2017  2018 CC-2100        Charles   Clay       TE     87.6    10
+## 11   2017  2018 HH-0225        Hunter    Henry      TE     85.7    11
+## 12   2017  2018 JC-4300        Jared     Cook       TE     83.8    12
+## 13   2017  2018 VD-0100        Vernon    Davis      TE     83.4    13
+## 14   2017  2018 JD-2550        Jack      Doyle      TE     83.4    14
+## 15   2017  2018 NO-0150        Nick      O&#39;Leary    TE     77.4    15
+## 16   2017  2018 JT-2000        Julius    Thomas     TE     74.0    16
+## 17   2017  2018 TE-0300        Tyler     Eifert     TE     72.5    17
+## 18   2017  2018 JR-1150        Jordan    Reed       TE     72.4    18
+## 19   2017  2018 LK-0200        Lance     Kendricks  TE     72.1    19
+## 20   2017  2018 OH-0250        O.J.      Howard     TE     67.2    20
+## 21   2017  2018 CB-2775        Cameron   Brate      TE     66.2    21
+## 22   2017  2018 JS-4550        Jonnu     Smith      TE     63.8    22
+## 23   2017  2018 Dallas Goedert &lt;NA&gt;      &lt;NA&gt;       TE     63.7    23
+## 24   2017  2018 CF-0650        Coby      Fleener    TE     59.5    24
+## 25   2017  2018 Mike Gesicki   &lt;NA&gt;      &lt;NA&gt;       TE     58.0    25
+## 26   2017  2018 MB-1800        Martellus Bennett    TE     55.6    26
+## 27   2017  2018 RG-1870        Ryan      Griffin    TE     55.5    27
+## 28   2017  2018 JG-3700        Jermaine  Gresham    TE     55.2    28
+## 29   2017  2018 DW-0500        Delanie   Walker     TE     53.6    29
+## 30   2017  2018 BW-0700        Benjamin  Watson     TE     51.4    30
 ## # ... with 103 more rows</code></pre>
 </div>
 </div>
