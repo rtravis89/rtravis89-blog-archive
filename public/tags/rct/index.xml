@@ -17,7 +17,7 @@
       <pubDate>Sun, 18 Feb 2018 00:00:00 +0000</pubDate>
       
       <guid>/post/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</guid>
-      <description>IntroductionA common misconception about randomized clinical trials is that the randomization process should balance any particular covariate across the arms of the trial and that therefore there is no benefit to controlling for covariates with a regression model unless a particular covariate happens to be unbalanced by chance. Determining whether a covariate is considered unbalanced amounts to performing a significance test comparing the arms and checking to see if the p-value is below some threshold (.</description>
+      <description>Introduction A common misconception about randomized clinical trials is that the randomization process should balance any particular covariate across the arms of the trial and that therefore there is no benefit to controlling for covariates with a regression model unless a particular covariate happens to be unbalanced by chance. Determining whether a covariate is considered unbalanced amounts to performing a significance test comparing the arms and checking to see if the p-value is below some threshold (.</description>
     </item>
     
   </channel>

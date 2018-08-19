@@ -18,7 +18,6 @@ library(caret)
 library(ebbr)
 library(rvest)
 library(mice)
-
 ```
 
 Accurate prediction of player performance is of immense value to those of use who play fantasy football. With this in mind, I was curious about how well simple prediction models could perform in this context. Conveniently, Sean J. Taylor provided some nice code to make [2017 fantasy football projections](https://gist.github.com/seanjtaylor/b4d423dad0083cc8cc5b2a9fd1e4e63e) which we can use to make 2018 predictions. Looking at his predictions for 2017, I'm not overly optimistic about how the models will perform. At any rate, it ought to be fun to see what theys produce.
@@ -28,13 +27,13 @@ My code is mostly identical to Sean's except I've updated some of the year value
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE}
 
 ## One row per player, with combine, draft position, and name.
-player <- read_csv('C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\PLAYER.csv')
+player <- read_csv('~/Documents/NFL/nfl_00-17/PLAYER.csv')
 
 ## One row per (player, game) with all stats for that game.
-offense <- read_csv('C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\OFFENSE.csv')
+offense <- read_csv('~/Documents/NFL/nfl_00-17/OFFENSE.csv')
 
 ## One row per game
-game <- read_csv('C:\\Users\\rtravis\\Documents\\NFL\\nfl_00-17\\GAME.csv')
+game <- read_csv('~/Documents/NFL/nfl_00-17/GAME.csv')
 
 
 off.games <- offense %>%
@@ -335,26 +334,32 @@ rnks <- preds %>%
 
 ####Running Back Rankings
 ```{r}
-rnks %>% filter(pos1 == 'RB', seas == 2018, cutoff == 2017) %>% print(n = 30)
+rnks %>% filter(pos1 == 'RB', seas == 2018, cutoff == 2017) %>% 
+  dplyr::select(player,fname,lname,pos1,fpts,rnk) %>%
+  .[1:20,] %>% knitr::kable()
 
 ```
 
 ####Wide Receiver Rankings
 ```{r}
-rnks %>% filter(pos1 == 'WR', seas == 2018, cutoff == 2017) %>% print(n = 30)
-
+rnks %>% filter(pos1 == 'WR', seas == 2018, cutoff == 2017) %>% 
+  dplyr::select(player,fname,lname,pos1,fpts,rnk) %>%
+  .[1:20,] %>% knitr::kable()
 ```
 
 ####Quarterback Rankings
 ```{r}
-rnks %>% filter(pos1 == 'QB', seas == 2018, cutoff == 2017) %>% print(n = 30)
+rnks %>% filter(pos1 == 'QB', seas == 2018, cutoff == 2017) %>%
+  dplyr::select(player,fname,lname,pos1,fpts,rnk) %>%
+  .[1:20,] %>% knitr::kable()
 
 ```
 
 ####Tight End Rankings
 ```{r}
-rnks %>% filter(pos1 == 'TE', seas == 2018, cutoff == 2017) %>% print(n = 30)
-
+rnks %>% filter(pos1 == 'TE', seas == 2018, cutoff == 2017) %>% 
+  dplyr::select(player,fname,lname,pos1,fpts,rnk) %>%
+  .[1:20,] %>% knitr::kable()
 ```
 
 ###Model Performance Plots

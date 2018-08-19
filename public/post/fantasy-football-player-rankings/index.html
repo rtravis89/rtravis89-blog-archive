@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.32.2" />
+<meta name="generator" content="Hugo 0.47" />
 
 
 <title>Fantasy Football Player Rankings - Fledgling Statistician</title>
@@ -66,7 +66,7 @@
 
   <article class="article">
     
-    <span class="article-duration">12 min read</span>
+    <span class="article-duration">9 min read</span>
     
 
     <h1 class="article-title">Fantasy Football Player Rankings</h1>
@@ -169,159 +169,895 @@ preds &lt;- config %&gt;%
 <pre><code>## Adding missing grouping variables: `cutoff`</code></pre>
 <div id="running-back-rankings" class="section level4">
 <h4>Running Back Rankings</h4>
-<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;RB&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
-<pre><code>## # A tibble: 197 x 8
-## # Groups:   cutoff, seas, pos1 [1]
-##    cutoff  seas player          fname     lname     pos1   fpts   rnk
-##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;           &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
-##  1   2017  2018 LB-0250         Le&#39;Veon   Bell      RB      215     1
-##  2   2017  2018 LF-0650         Leonard   Fournette RB      205     2
-##  3   2017  2018 DM-4300         DeMarco   Murray    RB      203     3
-##  4   2017  2018 LM-1000         LeSean    McCoy     RB      200     4
-##  5   2017  2018 FG-0200         Frank     Gore      RB      181     5
-##  6   2017  2018 TG-1950         Todd      Gurley    RB      177     6
-##  7   2017  2018 MI-0100         Mark      Ingram    RB      172     7
-##  8   2017  2018 JH-5575         Jordan    Howard    RB      158     8
-##  9   2017  2018 KH-2850         Kareem    Hunt      RB      157     9
-## 10   2017  2018 DF-1875         Devonta   Freeman   RB      150    10
-## 11   2017  2018 CH-5000         Carlos    Hyde      RB      150    11
-## 12   2017  2018 JA-0450         Jay       Ajayi     RB      142    12
-## 13   2017  2018 LM-1150         Lamar     Miller    RB      141    13
-## 14   2017  2018 MG-1150         Melvin    Gordon    RB      140    14
-## 15   2017  2018 IC-0300         Isaiah    Crowell   RB      139    15
-## 16   2017  2018 Ronald Jones II &lt;NA&gt;      &lt;NA&gt;      RB      133    16
-## 17   2017  2018 CM-1225         Christian McCaffrey RB      133    17
-## 18   2017  2018 LM-1850         Latavius  Murray    RB      132    18
-## 19   2017  2018 MF-1300         Matt      Forte     RB      131    19
-## 20   2017  2018 AK-0050         Alvin     Kamara    RB      130    20
-## 21   2017  2018 JS-6700         Jonathan  Stewart   RB      130    21
-## 22   2017  2018 Kerryon Johnson &lt;NA&gt;      &lt;NA&gt;      RB      129    22
-## 23   2017  2018 DH-2450         Derrick   Henry     RB      128    23
-## 24   2017  2018 Royce Freeman   &lt;NA&gt;      &lt;NA&gt;      RB      128    24
-## 25   2017  2018 Sony Michel     &lt;NA&gt;      &lt;NA&gt;      RB      127    25
-## 26   2017  2018 KD-1462         Kenyan    Drake     RB      127    26
-## 27   2017  2018 JM-3450         Jerick    McKinnon  RB      125    27
-## 28   2017  2018 EE-0250         Ezekiel   Elliott   RB      125    28
-## 29   2017  2018 DJ-1850         Duke      Johnson   RB      124    29
-## 30   2017  2018 ML-2500         Marshawn  Lynch     RB      123    30
-## # ... with 167 more rows</code></pre>
+<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;RB&#39;, seas == 2018, cutoff == 2017) %&gt;% 
+  dplyr::select(player,fname,lname,pos1,fpts,rnk) %&gt;%
+  .[1:20,] %&gt;% knitr::kable()</code></pre>
+<pre><code>## Adding missing grouping variables: `cutoff`, `seas`</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">cutoff</th>
+<th align="right">seas</th>
+<th align="left">player</th>
+<th align="left">fname</th>
+<th align="left">lname</th>
+<th align="left">pos1</th>
+<th align="right">fpts</th>
+<th align="right">rnk</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">LB-0250</td>
+<td align="left">Le’Veon</td>
+<td align="left">Bell</td>
+<td align="left">RB</td>
+<td align="right">215.4427</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">LF-0650</td>
+<td align="left">Leonard</td>
+<td align="left">Fournette</td>
+<td align="left">RB</td>
+<td align="right">205.4761</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">DM-4300</td>
+<td align="left">DeMarco</td>
+<td align="left">Murray</td>
+<td align="left">RB</td>
+<td align="right">203.3259</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">LM-1000</td>
+<td align="left">LeSean</td>
+<td align="left">McCoy</td>
+<td align="left">RB</td>
+<td align="right">199.9459</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">FG-0200</td>
+<td align="left">Frank</td>
+<td align="left">Gore</td>
+<td align="left">RB</td>
+<td align="right">180.6542</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">TG-1950</td>
+<td align="left">Todd</td>
+<td align="left">Gurley</td>
+<td align="left">RB</td>
+<td align="right">177.3315</td>
+<td align="right">6</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">MI-0100</td>
+<td align="left">Mark</td>
+<td align="left">Ingram</td>
+<td align="left">RB</td>
+<td align="right">171.8154</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JH-5575</td>
+<td align="left">Jordan</td>
+<td align="left">Howard</td>
+<td align="left">RB</td>
+<td align="right">158.1608</td>
+<td align="right">8</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">KH-2850</td>
+<td align="left">Kareem</td>
+<td align="left">Hunt</td>
+<td align="left">RB</td>
+<td align="right">157.1811</td>
+<td align="right">9</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">DF-1875</td>
+<td align="left">Devonta</td>
+<td align="left">Freeman</td>
+<td align="left">RB</td>
+<td align="right">150.4969</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">CH-5000</td>
+<td align="left">Carlos</td>
+<td align="left">Hyde</td>
+<td align="left">RB</td>
+<td align="right">150.1606</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JA-0450</td>
+<td align="left">Jay</td>
+<td align="left">Ajayi</td>
+<td align="left">RB</td>
+<td align="right">141.6486</td>
+<td align="right">12</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">LM-1150</td>
+<td align="left">Lamar</td>
+<td align="left">Miller</td>
+<td align="left">RB</td>
+<td align="right">141.0932</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">MG-1150</td>
+<td align="left">Melvin</td>
+<td align="left">Gordon</td>
+<td align="left">RB</td>
+<td align="right">139.9217</td>
+<td align="right">14</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">IC-0300</td>
+<td align="left">Isaiah</td>
+<td align="left">Crowell</td>
+<td align="left">RB</td>
+<td align="right">138.7915</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">Ronald Jones II</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+<td align="left">RB</td>
+<td align="right">133.4248</td>
+<td align="right">16</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">CM-1225</td>
+<td align="left">Christian</td>
+<td align="left">McCaffrey</td>
+<td align="left">RB</td>
+<td align="right">133.0426</td>
+<td align="right">17</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">LM-1850</td>
+<td align="left">Latavius</td>
+<td align="left">Murray</td>
+<td align="left">RB</td>
+<td align="right">132.4538</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">MF-1300</td>
+<td align="left">Matt</td>
+<td align="left">Forte</td>
+<td align="left">RB</td>
+<td align="right">131.4645</td>
+<td align="right">19</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">AK-0050</td>
+<td align="left">Alvin</td>
+<td align="left">Kamara</td>
+<td align="left">RB</td>
+<td align="right">130.3700</td>
+<td align="right">20</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="wide-receiver-rankings" class="section level4">
 <h4>Wide Receiver Rankings</h4>
-<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;WR&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
-<pre><code>## # A tibble: 268 x 8
-## # Groups:   cutoff, seas, pos1 [1]
-##    cutoff  seas player  fname     lname          pos1   fpts   rnk
-##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;     &lt;chr&gt;          &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
-##  1   2017  2018 JJ-4700 Julio     Jones          WR      179     1
-##  2   2017  2018 AB-3500 Antonio   Brown          WR      177     2
-##  3   2017  2018 LF-0200 Larry     Fitzgerald     WR      165     3
-##  4   2017  2018 ME-0600 Mike      Evans          WR      149     4
-##  5   2017  2018 TH-1850 Ty        Hilton         WR      145     5
-##  6   2017  2018 JL-0215 Jarvis    Landry         WR      142     6
-##  7   2017  2018 RM-1500 Rishard   Matthews       WR      139     7
-##  8   2017  2018 DB-5300 Dez       Bryant         WR      132     8
-##  9   2017  2018 AG-1500 A.J.      Green          WR      131     9
-## 10   2017  2018 GT-0100 Golden    Tate           WR      131    10
-## 11   2017  2018 BC-2325 Brandin   Cooks          WR      128    11
-## 12   2017  2018 DT-0900 Demaryius Thomas         WR      122    12
-## 13   2017  2018 DH-3950 DeAndre   Hopkins        WR      122    13
-## 14   2017  2018 AT-0350 Adam      Thielen        WR      119    14
-## 15   2017  2018 PG-0100 Pierre    Garcon         WR      119    15
-## 16   2017  2018 MC-2900 Michael   Crabtree       WR      118    16
-## 17   2017  2018 DB-0500 Doug      Baldwin        WR      117    17
-## 18   2017  2018 JS-4750 Juju      Smith-Schuster WR      115    18
-## 19   2017  2018 CK-1300 Cooper    Kupp           WR      115    19
-## 20   2017  2018 MB-4550 Martavis  Bryant         WR      112    20
-## 21   2017  2018 MT-0875 Michael   Thomas         WR      112    21
-## 22   2017  2018 MW-0500 Mike      Wallace        WR      111    22
-## 23   2017  2018 JN-0900 Jordy     Nelson         WR      107    23
-## 24   2017  2018 TH-1750 Tyreek    Hill           WR      106    24
-## 25   2017  2018 SD-0537 Stefon    Diggs          WR      106    25
-## 26   2017  2018 MJ-2250 Marvin    Jones          WR      105    26
-## 27   2017  2018 AJ-0430 Alshon    Jeffery        WR      104    27
-## 28   2017  2018 RC-1500 Randall   Cobb           WR      102    28
-## 29   2017  2018 BL-0100 Brandon   LaFell         WR      101    29
-## 30   2017  2018 AR-1250 Allen     Robinson       WR      101    30
-## # ... with 238 more rows</code></pre>
+<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;WR&#39;, seas == 2018, cutoff == 2017) %&gt;% 
+  dplyr::select(player,fname,lname,pos1,fpts,rnk) %&gt;%
+  .[1:20,] %&gt;% knitr::kable()</code></pre>
+<pre><code>## Adding missing grouping variables: `cutoff`, `seas`</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">cutoff</th>
+<th align="right">seas</th>
+<th align="left">player</th>
+<th align="left">fname</th>
+<th align="left">lname</th>
+<th align="left">pos1</th>
+<th align="right">fpts</th>
+<th align="right">rnk</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JJ-4700</td>
+<td align="left">Julio</td>
+<td align="left">Jones</td>
+<td align="left">WR</td>
+<td align="right">178.7398</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">AB-3500</td>
+<td align="left">Antonio</td>
+<td align="left">Brown</td>
+<td align="left">WR</td>
+<td align="right">176.9903</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">LF-0200</td>
+<td align="left">Larry</td>
+<td align="left">Fitzgerald</td>
+<td align="left">WR</td>
+<td align="right">164.6259</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">ME-0600</td>
+<td align="left">Mike</td>
+<td align="left">Evans</td>
+<td align="left">WR</td>
+<td align="right">149.0616</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">TH-1850</td>
+<td align="left">Ty</td>
+<td align="left">Hilton</td>
+<td align="left">WR</td>
+<td align="right">145.0079</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JL-0215</td>
+<td align="left">Jarvis</td>
+<td align="left">Landry</td>
+<td align="left">WR</td>
+<td align="right">141.7893</td>
+<td align="right">6</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">RM-1500</td>
+<td align="left">Rishard</td>
+<td align="left">Matthews</td>
+<td align="left">WR</td>
+<td align="right">138.5234</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">DB-5300</td>
+<td align="left">Dez</td>
+<td align="left">Bryant</td>
+<td align="left">WR</td>
+<td align="right">132.4038</td>
+<td align="right">8</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">AG-1500</td>
+<td align="left">A.J.</td>
+<td align="left">Green</td>
+<td align="left">WR</td>
+<td align="right">131.2524</td>
+<td align="right">9</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">GT-0100</td>
+<td align="left">Golden</td>
+<td align="left">Tate</td>
+<td align="left">WR</td>
+<td align="right">130.7704</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">BC-2325</td>
+<td align="left">Brandin</td>
+<td align="left">Cooks</td>
+<td align="left">WR</td>
+<td align="right">128.0500</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">DT-0900</td>
+<td align="left">Demaryius</td>
+<td align="left">Thomas</td>
+<td align="left">WR</td>
+<td align="right">122.2746</td>
+<td align="right">12</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">DH-3950</td>
+<td align="left">DeAndre</td>
+<td align="left">Hopkins</td>
+<td align="left">WR</td>
+<td align="right">122.2129</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">AT-0350</td>
+<td align="left">Adam</td>
+<td align="left">Thielen</td>
+<td align="left">WR</td>
+<td align="right">119.4316</td>
+<td align="right">14</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">PG-0100</td>
+<td align="left">Pierre</td>
+<td align="left">Garcon</td>
+<td align="left">WR</td>
+<td align="right">119.1293</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">MC-2900</td>
+<td align="left">Michael</td>
+<td align="left">Crabtree</td>
+<td align="left">WR</td>
+<td align="right">118.0380</td>
+<td align="right">16</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">DB-0500</td>
+<td align="left">Doug</td>
+<td align="left">Baldwin</td>
+<td align="left">WR</td>
+<td align="right">117.1213</td>
+<td align="right">17</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JS-4750</td>
+<td align="left">Juju</td>
+<td align="left">Smith-Schuster</td>
+<td align="left">WR</td>
+<td align="right">115.4172</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">CK-1300</td>
+<td align="left">Cooper</td>
+<td align="left">Kupp</td>
+<td align="left">WR</td>
+<td align="right">115.0892</td>
+<td align="right">19</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">MB-4550</td>
+<td align="left">Martavis</td>
+<td align="left">Bryant</td>
+<td align="left">WR</td>
+<td align="right">112.0642</td>
+<td align="right">20</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="quarterback-rankings" class="section level4">
 <h4>Quarterback Rankings</h4>
-<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;QB&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
-<pre><code>## # A tibble: 93 x 8
-## # Groups:   cutoff, seas, pos1 [1]
-##    cutoff  seas player        fname   lname          pos1   fpts   rnk
-##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;         &lt;chr&gt;   &lt;chr&gt;          &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
-##  1   2017  2018 CN-0500       Cam     Newton         QB      328     1
-##  2   2017  2018 DB-3800       Drew    Brees          QB      326     2
-##  3   2017  2018 TB-2300       Tom     Brady          QB      324     3
-##  4   2017  2018 MS-4100       Matthew Stafford       QB      324     4
-##  5   2017  2018 MR-2500       Matt    Ryan           QB      323     5
-##  6   2017  2018 BB-2425       Blake   Bortles        QB      320     6
-##  7   2017  2018 PR-0300       Philip  Rivers         QB      319     7
-##  8   2017  2018 RW-3850       Russell Wilson         QB      311     8
-##  9   2017  2018 KC-2350       Kirk    Cousins        QB      308     9
-## 10   2017  2018 JG-1850       Jared   Goff           QB      293    10
-## 11   2017  2018 DC-0725       Derek   Carr           QB      289    11
-## 12   2017  2018 DP-2037       Dak     Prescott       QB      287    12
-## 13   2017  2018 EM-0200       Eli     Manning        QB      284    13
-## 14   2017  2018 BR-1100       Ben     Roethlisberger QB      281    14
-## 15   2017  2018 AD-0100       Andy    Dalton         QB      280    15
-## 16   2017  2018 JF-1900       Joe     Flacco         QB      274    16
-## 17   2017  2018 JC-6200       Jay     Cutler         QB      272    17
-## 18   2017  2018 TT-0500       Tyrod   Taylor         QB      267    18
-## 19   2017  2018 AR-1300       Aaron   Rodgers        QB      265    19
-## 20   2017  2018 CP-0500       Carson  Palmer         QB      254    20
-## 21   2017  2018 AS-1600       Alex    Smith          QB      247    21
-## 22   2017  2018 JW-5650       Jameis  Winston        QB      235    22
-## 23   2017  2018 CW-1425       Carson  Wentz          QB      227    23
-## 24   2017  2018 DK-0875       DeShone Kizer          QB      223    24
-## 25   2017  2018 Sam Darnold   &lt;NA&gt;    &lt;NA&gt;           QB      217    25
-## 26   2017  2018 Josh Rosen    &lt;NA&gt;    &lt;NA&gt;           QB      213    26
-## 27   2017  2018 RF-0500       Ryan    Fitzpatrick    QB      210    27
-## 28   2017  2018 JB-5725       Jacoby  Brissett       QB      210    28
-## 29   2017  2018 MM-0912       Marcus  Mariota        QB      201    29
-## 30   2017  2018 Lamar Jackson &lt;NA&gt;    &lt;NA&gt;           QB      201    30
-## # ... with 63 more rows</code></pre>
+<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;QB&#39;, seas == 2018, cutoff == 2017) %&gt;%
+  dplyr::select(player,fname,lname,pos1,fpts,rnk) %&gt;%
+  .[1:20,] %&gt;% knitr::kable()</code></pre>
+<pre><code>## Adding missing grouping variables: `cutoff`, `seas`</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">cutoff</th>
+<th align="right">seas</th>
+<th align="left">player</th>
+<th align="left">fname</th>
+<th align="left">lname</th>
+<th align="left">pos1</th>
+<th align="right">fpts</th>
+<th align="right">rnk</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">CN-0500</td>
+<td align="left">Cam</td>
+<td align="left">Newton</td>
+<td align="left">QB</td>
+<td align="right">328.2320</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">DB-3800</td>
+<td align="left">Drew</td>
+<td align="left">Brees</td>
+<td align="left">QB</td>
+<td align="right">326.2442</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">TB-2300</td>
+<td align="left">Tom</td>
+<td align="left">Brady</td>
+<td align="left">QB</td>
+<td align="right">324.2403</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">MS-4100</td>
+<td align="left">Matthew</td>
+<td align="left">Stafford</td>
+<td align="left">QB</td>
+<td align="right">323.5988</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">MR-2500</td>
+<td align="left">Matt</td>
+<td align="left">Ryan</td>
+<td align="left">QB</td>
+<td align="right">323.4057</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">BB-2425</td>
+<td align="left">Blake</td>
+<td align="left">Bortles</td>
+<td align="left">QB</td>
+<td align="right">319.7643</td>
+<td align="right">6</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">PR-0300</td>
+<td align="left">Philip</td>
+<td align="left">Rivers</td>
+<td align="left">QB</td>
+<td align="right">318.7249</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">RW-3850</td>
+<td align="left">Russell</td>
+<td align="left">Wilson</td>
+<td align="left">QB</td>
+<td align="right">311.1636</td>
+<td align="right">8</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">KC-2350</td>
+<td align="left">Kirk</td>
+<td align="left">Cousins</td>
+<td align="left">QB</td>
+<td align="right">308.0833</td>
+<td align="right">9</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JG-1850</td>
+<td align="left">Jared</td>
+<td align="left">Goff</td>
+<td align="left">QB</td>
+<td align="right">293.0441</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">DC-0725</td>
+<td align="left">Derek</td>
+<td align="left">Carr</td>
+<td align="left">QB</td>
+<td align="right">289.4341</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">DP-2037</td>
+<td align="left">Dak</td>
+<td align="left">Prescott</td>
+<td align="left">QB</td>
+<td align="right">286.5810</td>
+<td align="right">12</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">EM-0200</td>
+<td align="left">Eli</td>
+<td align="left">Manning</td>
+<td align="left">QB</td>
+<td align="right">283.5398</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">BR-1100</td>
+<td align="left">Ben</td>
+<td align="left">Roethlisberger</td>
+<td align="left">QB</td>
+<td align="right">281.3730</td>
+<td align="right">14</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">AD-0100</td>
+<td align="left">Andy</td>
+<td align="left">Dalton</td>
+<td align="left">QB</td>
+<td align="right">279.9740</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JF-1900</td>
+<td align="left">Joe</td>
+<td align="left">Flacco</td>
+<td align="left">QB</td>
+<td align="right">274.1218</td>
+<td align="right">16</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JC-6200</td>
+<td align="left">Jay</td>
+<td align="left">Cutler</td>
+<td align="left">QB</td>
+<td align="right">272.2124</td>
+<td align="right">17</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">TT-0500</td>
+<td align="left">Tyrod</td>
+<td align="left">Taylor</td>
+<td align="left">QB</td>
+<td align="right">267.1779</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">AR-1300</td>
+<td align="left">Aaron</td>
+<td align="left">Rodgers</td>
+<td align="left">QB</td>
+<td align="right">264.5544</td>
+<td align="right">19</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">CP-0500</td>
+<td align="left">Carson</td>
+<td align="left">Palmer</td>
+<td align="left">QB</td>
+<td align="right">253.5234</td>
+<td align="right">20</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="tight-end-rankings" class="section level4">
 <h4>Tight End Rankings</h4>
-<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;TE&#39;, seas == 2018, cutoff == 2017) %&gt;% print(n = 30)</code></pre>
-<pre><code>## # A tibble: 133 x 8
-## # Groups:   cutoff, seas, pos1 [1]
-##    cutoff  seas player         fname     lname      pos1   fpts   rnk
-##     &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;          &lt;chr&gt;     &lt;chr&gt;      &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
-##  1   2017  2018 TK-0150        Travis    Kelce      TE    148       1
-##  2   2017  2018 JG-2900        Jimmy     Graham     TE    137       2
-##  3   2017  2018 ZE-0100        Zach      Ertz       TE    136       3
-##  4   2017  2018 EE-0400        Evan      Engram     TE    134       4
-##  5   2017  2018 JW-6000        Jason     Witten     TE    110       5
-##  6   2017  2018 KR-1200        Kyle      Rudolph    TE    107       6
-##  7   2017  2018 RG-2200        Rob       Gronkowski TE    102       7
-##  8   2017  2018 AG-0500        Antonio   Gates      TE    101       8
-##  9   2017  2018 EE-0050        Eric      Ebron      TE     90.6     9
-## 10   2017  2018 CC-2100        Charles   Clay       TE     87.6    10
-## 11   2017  2018 HH-0225        Hunter    Henry      TE     85.7    11
-## 12   2017  2018 JC-4300        Jared     Cook       TE     83.8    12
-## 13   2017  2018 VD-0100        Vernon    Davis      TE     83.4    13
-## 14   2017  2018 JD-2550        Jack      Doyle      TE     83.4    14
-## 15   2017  2018 NO-0150        Nick      O&#39;Leary    TE     77.4    15
-## 16   2017  2018 JT-2000        Julius    Thomas     TE     74.0    16
-## 17   2017  2018 TE-0300        Tyler     Eifert     TE     72.5    17
-## 18   2017  2018 JR-1150        Jordan    Reed       TE     72.4    18
-## 19   2017  2018 LK-0200        Lance     Kendricks  TE     72.1    19
-## 20   2017  2018 OH-0250        O.J.      Howard     TE     67.2    20
-## 21   2017  2018 CB-2775        Cameron   Brate      TE     66.2    21
-## 22   2017  2018 JS-4550        Jonnu     Smith      TE     63.8    22
-## 23   2017  2018 Dallas Goedert &lt;NA&gt;      &lt;NA&gt;       TE     63.7    23
-## 24   2017  2018 CF-0650        Coby      Fleener    TE     59.5    24
-## 25   2017  2018 Mike Gesicki   &lt;NA&gt;      &lt;NA&gt;       TE     58.0    25
-## 26   2017  2018 MB-1800        Martellus Bennett    TE     55.6    26
-## 27   2017  2018 RG-1870        Ryan      Griffin    TE     55.5    27
-## 28   2017  2018 JG-3700        Jermaine  Gresham    TE     55.2    28
-## 29   2017  2018 DW-0500        Delanie   Walker     TE     53.6    29
-## 30   2017  2018 BW-0700        Benjamin  Watson     TE     51.4    30
-## # ... with 103 more rows</code></pre>
+<pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;TE&#39;, seas == 2018, cutoff == 2017) %&gt;% 
+  dplyr::select(player,fname,lname,pos1,fpts,rnk) %&gt;%
+  .[1:20,] %&gt;% knitr::kable()</code></pre>
+<pre><code>## Adding missing grouping variables: `cutoff`, `seas`</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">cutoff</th>
+<th align="right">seas</th>
+<th align="left">player</th>
+<th align="left">fname</th>
+<th align="left">lname</th>
+<th align="left">pos1</th>
+<th align="right">fpts</th>
+<th align="right">rnk</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">TK-0150</td>
+<td align="left">Travis</td>
+<td align="left">Kelce</td>
+<td align="left">TE</td>
+<td align="right">148.11218</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JG-2900</td>
+<td align="left">Jimmy</td>
+<td align="left">Graham</td>
+<td align="left">TE</td>
+<td align="right">137.32173</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">ZE-0100</td>
+<td align="left">Zach</td>
+<td align="left">Ertz</td>
+<td align="left">TE</td>
+<td align="right">135.75456</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">EE-0400</td>
+<td align="left">Evan</td>
+<td align="left">Engram</td>
+<td align="left">TE</td>
+<td align="right">134.18324</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JW-6000</td>
+<td align="left">Jason</td>
+<td align="left">Witten</td>
+<td align="left">TE</td>
+<td align="right">110.39928</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">KR-1200</td>
+<td align="left">Kyle</td>
+<td align="left">Rudolph</td>
+<td align="left">TE</td>
+<td align="right">106.56947</td>
+<td align="right">6</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">RG-2200</td>
+<td align="left">Rob</td>
+<td align="left">Gronkowski</td>
+<td align="left">TE</td>
+<td align="right">101.79246</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">AG-0500</td>
+<td align="left">Antonio</td>
+<td align="left">Gates</td>
+<td align="left">TE</td>
+<td align="right">101.16792</td>
+<td align="right">8</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">EE-0050</td>
+<td align="left">Eric</td>
+<td align="left">Ebron</td>
+<td align="left">TE</td>
+<td align="right">90.60055</td>
+<td align="right">9</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">CC-2100</td>
+<td align="left">Charles</td>
+<td align="left">Clay</td>
+<td align="left">TE</td>
+<td align="right">87.62130</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">HH-0225</td>
+<td align="left">Hunter</td>
+<td align="left">Henry</td>
+<td align="left">TE</td>
+<td align="right">85.74416</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JC-4300</td>
+<td align="left">Jared</td>
+<td align="left">Cook</td>
+<td align="left">TE</td>
+<td align="right">83.79069</td>
+<td align="right">12</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">VD-0100</td>
+<td align="left">Vernon</td>
+<td align="left">Davis</td>
+<td align="left">TE</td>
+<td align="right">83.44308</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JD-2550</td>
+<td align="left">Jack</td>
+<td align="left">Doyle</td>
+<td align="left">TE</td>
+<td align="right">83.36575</td>
+<td align="right">14</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">NO-0150</td>
+<td align="left">Nick</td>
+<td align="left">O’Leary</td>
+<td align="left">TE</td>
+<td align="right">77.43070</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JT-2000</td>
+<td align="left">Julius</td>
+<td align="left">Thomas</td>
+<td align="left">TE</td>
+<td align="right">73.97472</td>
+<td align="right">16</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">TE-0300</td>
+<td align="left">Tyler</td>
+<td align="left">Eifert</td>
+<td align="left">TE</td>
+<td align="right">72.50556</td>
+<td align="right">17</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">JR-1150</td>
+<td align="left">Jordan</td>
+<td align="left">Reed</td>
+<td align="left">TE</td>
+<td align="right">72.44428</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">LK-0200</td>
+<td align="left">Lance</td>
+<td align="left">Kendricks</td>
+<td align="left">TE</td>
+<td align="right">72.07954</td>
+<td align="right">19</td>
+</tr>
+<tr class="even">
+<td align="right">2017</td>
+<td align="right">2018</td>
+<td align="left">OH-0250</td>
+<td align="left">O.J.</td>
+<td align="left">Howard</td>
+<td align="left">TE</td>
+<td align="right">67.21814</td>
+<td align="right">20</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div id="model-performance-plots" class="section level3">
