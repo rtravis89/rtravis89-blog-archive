@@ -6,7 +6,7 @@
     <description>Recent content in Posts on Fledgling Statistician</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 19 Aug 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 30 Aug 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
@@ -14,10 +14,20 @@
     <item>
       <title>Some books I read in August</title>
       <link>/post/some-books-i-read-in-august/</link>
-      <pubDate>Sun, 19 Aug 2018 00:00:00 +0000</pubDate>
+      <pubDate>Thu, 30 Aug 2018 00:00:00 +0000</pubDate>
       
       <guid>/post/some-books-i-read-in-august/</guid>
-      <description>October - China Mieville China Mieville is a very good science fiction writer, so I was intrigued when I saw that he wrote a book about the Russian revolution of 1917. Except for the first chapter that quickly covers the history leading up to the revolution and the final epilogue chapter, the book is organized so that each chapter represents a month starting from the overthrow of the Tsar in February to October when Lenin and the Bolsheviks take power.</description>
+      <description>October - China MievilleChina Mieville is a very good science fiction writer, so I was intrigued when I saw that he wrote a book about the Russian revolution of 1917. Except for the first chapter that quickly covers the history leading up to the revolution and the final epilogue chapter, the book is organized so that each chapter represents a month starting from the overthrow of the Tsar in February to October when Lenin and the Bolsheviks take power (plus an epilogue).</description>
+    </item>
+    
+    <item>
+      <title>Simple example of fitting splines with mixed models</title>
+      <link>/post/simple-example-of-fitting-splines-with-mixed-models/</link>
+      <pubDate>Tue, 21 Aug 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/simple-example-of-fitting-splines-with-mixed-models/</guid>
+      <description>I thought it might be value to provide some code showing how splines can be fit using mixed models.
+library(tidyverse)## Warning: package &amp;#39;tidyverse&amp;#39; was built under R version 3.4.4## -- Attaching packages ------------------------------------------------------------------------------------------------ tidyverse 1.2.1 --## v ggplot2 3.0.0 v purrr 0.2.5## v tibble 1.4.2 v dplyr 0.7.6## v tidyr 0.8.0 v stringr 1.3.1## v readr 1.1.1 v forcats 0.2.0## Warning: package &amp;#39;ggplot2&amp;#39; was built under R version 3.</description>
     </item>
     
     <item>
@@ -35,7 +45,7 @@
       <pubDate>Mon, 23 Jul 2018 00:00:00 +0000</pubDate>
       
       <guid>/post/some-books-i-read-july/</guid>
-      <description>The Dilemmas of Lenin: Terrorism, War, Empire, Love, Revolution by Tariq Ali A very interesting biography of Lenin. The book isn’t a traditional biography. Instead, it’s a kind of intellectual biography focused around particular topics. Some of the topics, Bolshevik military strategy during the Civil War for instance, don’t mention Lenin at all. Additionally there are chapters on terrorism in Tsarist Russia, and the work of feminist Bolsheviks. Ultimately, the book seeks to show that the revolution would not have occurred if it weren’t for Lenin.</description>
+      <description>The Dilemmas of Lenin: Terrorism, War, Empire, Love, Revolution by Tariq AliA very interesting biography of Lenin. The book isn’t a traditional biography. Instead, it’s a kind of intellectual biography focused around particular topics. Some of the topics, Bolshevik military strategy during the Civil War for instance, don’t mention Lenin at all. Additionally there are chapters on terrorism in Tsarist Russia, and the work of feminist Bolsheviks. Ultimately, the book seeks to show that the revolution would not have occurred if it weren’t for Lenin.</description>
     </item>
     
     <item>
@@ -89,7 +99,7 @@
       <pubDate>Sun, 25 Feb 2018 00:00:00 +0000</pubDate>
       
       <guid>/post/super-learning-from-scratch/</guid>
-      <description>Introduction Super Learning is a conceptually simple way of combining predictions from different models using cross validation. It simply uses the cross-validated results to form an optimal weighted combination of predictions. Combining predictions across models, typically refered to as stacking or stacked ensembles, is not new. I’ve seen references as far back as about 30 years, though I wouldn’t be surprised if it was much older. However, as far as I know, it was only relatively recently (within 15 years) that some nice theoretical properties were proven for a particular type of stacking called super learning.</description>
+      <description>IntroductionSuper Learning is a conceptually simple way of combining predictions from different models using cross validation. It simply uses the cross-validated results to form an optimal weighted combination of predictions. Combining predictions across models, typically refered to as stacking or stacked ensembles, is not new. I’ve seen references as far back as about 30 years, though I wouldn’t be surprised if it was much older. However, as far as I know, it was only relatively recently (within 15 years) that some nice theoretical properties were proven for a particular type of stacking called super learning.</description>
     </item>
     
     <item>
@@ -98,7 +108,7 @@
       <pubDate>Sun, 18 Feb 2018 00:00:00 +0000</pubDate>
       
       <guid>/post/covariate-adjustment-for-binary-outcomes-in-randomized-trials/</guid>
-      <description>Introduction A common misconception about randomized clinical trials is that the randomization process should balance any particular covariate across the arms of the trial and that therefore there is no benefit to controlling for covariates with a regression model unless a particular covariate happens to be unbalanced by chance. Determining whether a covariate is considered unbalanced amounts to performing a significance test comparing the arms and checking to see if the p-value is below some threshold (.</description>
+      <description>IntroductionA common misconception about randomized clinical trials is that the randomization process should balance any particular covariate across the arms of the trial and that therefore there is no benefit to controlling for covariates with a regression model unless a particular covariate happens to be unbalanced by chance. Determining whether a covariate is considered unbalanced amounts to performing a significance test comparing the arms and checking to see if the p-value is below some threshold (.</description>
     </item>
     
   </channel>

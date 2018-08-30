@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.47" />
+<meta name="generator" content="Hugo 0.32.2" />
 
 
 <title>Fantasy Football Player Rankings - Fledgling Statistician</title>
@@ -172,6 +172,7 @@ preds &lt;- config %&gt;%
 <pre class="r"><code>rnks %&gt;% filter(pos1 == &#39;RB&#39;, seas == 2018, cutoff == 2017) %&gt;% 
   dplyr::select(player,fname,lname,pos1,fpts,rnk) %&gt;%
   .[1:20,] %&gt;% knitr::kable()</code></pre>
+<pre><code>## Warning: package &#39;bindrcpp&#39; was built under R version 3.4.4</code></pre>
 <pre><code>## Adding missing grouping variables: `cutoff`, `seas`</code></pre>
 <table>
 <thead>

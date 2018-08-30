@@ -1,15 +1,82 @@
----
-title: Simple example of fitting splines with mixed models
-author: ~
-date: '2018-08-21'
-slug: simple-example-of-fitting-splines-with-mixed-models
-categories: []
-tags: []
----
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.32.2" />
+
+
+<title>Simple example of fitting splines with mixed models - Fledgling Statistician</title>
+<meta property="og:title" content="Simple example of fitting splines with mixed models - Fledgling Statistician">
 
 
 
-<p>I thought it might be value to provide some code showing how splines can be fit using mixed models.</p>
+  
+
+
+
+
+
+
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.11.0/styles/atom-one-dark.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+<link rel="stylesheet" href="/css/atom-one-dark-gist.css" rel="stylesheet" id="theme-stylesheet">
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/%3cnil%3e"
+         width=""
+         height=""
+         alt="">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rtravis89">GitHub</a></li>
+    
+    <li><a href="https://www.linkedin.com/in/rtravis89">LinkedIn</a></li>
+    
+    <li><a href="/post">Posts</a></li>
+    
+    <li><a href="https://twitter.com/fledglingstat">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">3 min read</span>
+    
+
+    <h1 class="article-title">Simple example of fitting splines with mixed models</h1>
+
+    
+    <span class="article-date">2018/08/21</span>
+    
+
+    <div class="article-content">
+      <p>I thought it might be value to provide some code showing how splines can be fit using mixed models.</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
 <pre><code>## Warning: package &#39;tidyverse&#39; was built under R version 3.4.4</code></pre>
 <pre><code>## -- Attaching packages ------------------------------------------------------------------------------------------------ tidyverse 1.2.1 --</code></pre>
@@ -117,3 +184,47 @@ data %&gt;% ggplot(aes(x = range, y = logratio)) + geom_point() +
   scale_color_discrete(name = &quot;Spline Types&quot;)</code></pre>
 <p><img src="/post/2018-08-21-simple-example-of-fitting-splines-with-mixed-models_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
 </div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.11.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+
