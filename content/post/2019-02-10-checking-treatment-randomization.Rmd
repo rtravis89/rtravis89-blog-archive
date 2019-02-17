@@ -8,7 +8,6 @@ tags: []
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(tidy = TRUE)
 knitr::opts_chunk$set(warning = FALSE)
 ```
 
@@ -90,11 +89,11 @@ results <- pmap_dfr(param_l, function(n,p,covariate_num,max_corr, x) {
                        x = x)
 })
 #Proportion of p-values less than .05
-print("Proportion of p-values less than .05")
 p1 <- sum(results$p_value < .05)/nrow(results)
+print("Proportion of p-values less than .05")
 p1
 #Number of simulations with at least 1 significant p-value
-print("Number of simulations with at least 1 significant p-value")
+
 p2<- 
   results %>%
   group_by(sim) %>%
@@ -102,6 +101,7 @@ p2<-
   ungroup() %>%
   summarize(total = sum(any_significant)/sims) %>%
   pull(total)
+print("Number of simulations with at least 1 significant p-value")
 p2
 
 ```
@@ -124,9 +124,9 @@ results %>%
 
 A related but separate questionable practice that sometimes occurs in medical studies is to do regression adjustment based on observed covariate imbalances. That is, looking at the dreaded table 1 p-values to determine what covariates to adjust for in your analysis. I think this is also mistaken, but it's a bit more complicated to show why. 
 
-I rewrote the function above function to simulate three simple adjustment scenarios: adjusting for all covariates, adjusting for no covariates, and adjusting for only covariates that are imbalanced between treatment groups. The process that relates the treatment and the covariates to the outcome is a simple one: $$Y_i = 2.5*trt + z_1*\beta_1*x_1 + ... + e_i$$. The beta coefficients are randomly selected from a Uniform(0.1,2). And e_i ~ N(0, 5). Additionally, $z_i$ is a 1 or 0 generated from a bernoulli distribution with probability of success, $p2$. Thus, each covariate has probability $p2$ of not being zero. I added this part to imitate the fact that we don't necessarily know whether a covariate actually affects the outcome. Overall, the process that generates Y is simple, and the only possible misspecification is including variables that don't affect the outcome (or failing to include those variables).
+I rewrote the function above function to simulate three simple adjustment scenarios: adjusting for all covariates, adjusting for no covariates, and adjusting for only covariates that are imbalanced between treatment groups. The process that relates the treatment and the covariates to the outcome is a simple one: $$Y_i = 2.5*trt + z_1*\beta_1*x_1 + ... + e_i$$. The beta coefficients are randomly selected from a Uniform(0.1,2). And e_i ~ N(0, 5). Additionally, $z_i$ is a 1 or 0 generated from a bernoulli distribution with probability of success, $p2$. Thus, each covariate has probability $p2$ of having an effect on the outcome. I added this part to imitate the fact that we don't necessarily know whether a covariate actually affects the outcome. Overall, the process that generates Y is simple, and the only possible misspecification is including variables that don't affect the outcome (or failing to include those variables).
 
-Below I run 5000 simulations with the same parameter values in the previous run, plus p2 = .7 (the probability each covariate will be included in the process that generates Y).
+Below I run 5000 simulations with the same parameter values in the previous run, with the addition of p2 = .7 (the probability each covariate will be included in the process that generates Y).
 
 ```{r, cache = TRUE}
 simulation_function2 <- function(n, p, p2, covariate_num, max_corr, x) {

@@ -19,7 +19,7 @@ tags: []
 <h1>Simulating Type I error from covariate balance checking</h1>
 <p>Just to give a simple demonstration of the effects of multiple comparison testing on the type I error, I wrote an R function that performs a simulation. The set up is a binary treatment variable with probability of assignment to the treatment group p, X number of covariates that are drawn from a multivariate standard normal with each pairwise correlation randomly generated from a uniform [0,M], where M is the maximum correlation chosen by the user.</p>
 <p>For this particular set up, I chose a sample size of 100, treatment assignment probability .5, 10 covariates, a maximum correlation .3, and ran 5000 simulations. The way the function is written, all the arguments are passed as named columns in a dataframe where the number of rows is the number of simulations.</p>
-<pre class="r"><code>#### Checking Randomization simulation
+<pre class="r"><code>####Checking Randomization simulation
 library(tidyverse)
 library(cowplot)
 library(MASS)
@@ -29,140 +29,206 @@ theme_set(theme_bw())
 set.seed(9294)
 
 simulation_function &lt;- function(n, p, covariate_num, max_corr, x) {
-    
-    corr &lt;- ifelse(max_corr == 0, max_corr, runif(1, min = 0, max = max_corr))
-    ## Create fake data treatment
-    trt &lt;- rbinom(n, size = 1, p = p)
-    ## covariates: 10 slightly correlated mvn(0,1) distributed variables
-    mu &lt;- rep(0, covariate_num)
-    SIGMA &lt;- matrix(corr, nrow = covariate_num, ncol = covariate_num)
-    # Make diagonal = 1
-    diag(SIGMA) &lt;- 1
-    # simulate covariates
-    covariates &lt;- mvrnorm(n = n, mu = mu, Sigma = SIGMA)
-    
-    # We know that treatment was randomly assigned independent of covariates
-    df &lt;- as_tibble(cbind(trt, covariates))
-    
-    # t-test for covariate; returns p-value
-    df %&gt;% gather(-trt, key = covariates, value = value) %&gt;% group_by(covariates) %&gt;% 
-        nest() %&gt;% transmute(p_value = map_dbl(data, function(x) {
-        t.test(x$value[x$trt == 0], x$value[x$trt == 1])$p.value
-    }), sim = x)
+  
+  corr &lt;- ifelse(max_corr == 0,
+                 max_corr, 
+                 runif(1,min = 0, max = max_corr))
+  ##Create fake data
+  ##treatment
+  trt &lt;- rbinom(n, size = 1, p = p)
+  ##covariates: 10 slightly correlated mvn(0,1) distributed variables
+  mu &lt;- rep(0, covariate_num)
+  SIGMA &lt;- matrix(corr, nrow = covariate_num, ncol = covariate_num)
+  #Make diagonal = 1
+  diag(SIGMA) &lt;- 1
+  #simulate covariates
+  covariates &lt;- mvrnorm(n = n, mu = mu, Sigma = SIGMA)
+  
+  #We know that treatment was randomly assigned independent of covariates
+  df &lt;- as_tibble(cbind(trt, covariates))
+  
+  #t-test for covariate; returns p-value
+  df %&gt;%
+    gather(-trt, key = covariates, value = value) %&gt;%
+    group_by(covariates) %&gt;%
+    nest() %&gt;%
+    transmute(p_value = map_dbl(data, function(x) {
+      t.test(x$value[x$trt == 0], x$value[x$trt == 1])$p.value
+    }),
+    sim = x) 
 }
 
-# simulations
+#simulations
 sims &lt;- 5000
 n &lt;- rep(100, length.out = sims)
-p &lt;- rep(0.5, length.out = sims)
+p &lt;- rep(.5, length.out = sims)
 covariate_num &lt;- rep(10, length.out = sims)
-max_corr &lt;- rep(0.3, length.out = sims)
-param_l &lt;- list(n = n, p = p, covariate_num = covariate_num, max_corr = max_corr, 
-    x = 1:sims)
-# simulation results
-results &lt;- pmap_dfr(param_l, function(n, p, covariate_num, max_corr, x) {
-    simulation_function(n = n, p = p, covariate_num = covariate_num, max_corr = max_corr, 
-        x = x)
+max_corr &lt;- rep(.3, length.out = sims)
+param_l &lt;- list(n = n,
+                p = p,
+                covariate_num = covariate_num,
+                max_corr = max_corr,
+                x = 1:sims)
+#simulation results
+results &lt;- pmap_dfr(param_l, function(n,p,covariate_num,max_corr, x) {
+  simulation_function(n = n,
+                       p = p,
+                       covariate_num = covariate_num,
+                       max_corr = max_corr,
+                       x = x)
 })
-# Proportion of p-values less than .05
+#Proportion of p-values less than .05
+p1 &lt;- sum(results$p_value &lt; .05)/nrow(results)
 print(&quot;Proportion of p-values less than .05&quot;)</code></pre>
 <pre><code>## [1] &quot;Proportion of p-values less than .05&quot;</code></pre>
-<pre class="r"><code>p1 &lt;- sum(results$p_value &lt; 0.05)/nrow(results)
-p1</code></pre>
+<pre class="r"><code>p1</code></pre>
 <pre><code>## [1] 0.05018</code></pre>
-<pre class="r"><code># Number of simulations with at least 1 significant p-value
+<pre class="r"><code>#Number of simulations with at least 1 significant p-value
+
+p2&lt;- 
+  results %&gt;%
+  group_by(sim) %&gt;%
+  summarize(any_significant = sum(p_value &lt; .05) &gt; 0) %&gt;%
+  ungroup() %&gt;%
+  summarize(total = sum(any_significant)/sims) %&gt;%
+  pull(total)
 print(&quot;Number of simulations with at least 1 significant p-value&quot;)</code></pre>
 <pre><code>## [1] &quot;Number of simulations with at least 1 significant p-value&quot;</code></pre>
-<pre class="r"><code>p2 &lt;- results %&gt;% group_by(sim) %&gt;% summarize(any_significant = sum(p_value &lt; 
-    0.05) &gt; 0) %&gt;% ungroup() %&gt;% summarize(total = sum(any_significant)/sims) %&gt;% 
-    pull(total)
-p2</code></pre>
+<pre class="r"><code>p2</code></pre>
 <pre><code>## [1] 0.3836</code></pre>
 <p>In this particular simulation, the proportion of total p-values less than .05 was 0.05018, which is close to what we expect. However, the relevant error rate is how many particular simulations produce at least 1 significant p-value and that rate is0.3836. This number is less than the bound given from the equation above, which for 10 tests give an error rate of about .4. (The bound assumes the tests are independent, but in our case there is correlation so the error rate is lower than the bound.) So you can see that even in a situation where there is no association at all between covariates and treatment groups, checking for balance gives the wrong answer quite often.</p>
 <p>The bar plot below shows how many significant p-values were produced for each simulation.</p>
-<pre class="r"><code># bar plot
-results %&gt;% group_by(sim) %&gt;% summarize(number_significant = sum(p_value &lt; 0.05)) %&gt;% 
-    ggplot(aes(x = sim, y = number_significant)) + geom_bar(stat = &quot;identity&quot;)</code></pre>
+<pre class="r"><code>#bar plot
+results %&gt;%
+  group_by(sim) %&gt;%
+  summarize(number_significant = sum(p_value &lt; .05)) %&gt;%
+  ggplot(aes(x = sim, y = number_significant)) + geom_bar(stat = &quot;identity&quot;)</code></pre>
 <p><img src="/post/2019-02-10-checking-treatment-randomization_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 </div>
 <div id="simulating-regression-adjustment-based-on-covariate-inclusion" class="section level1">
 <h1>Simulating regression adjustment based on covariate inclusion</h1>
 <p>A related but separate questionable practice that sometimes occurs in medical studies is to do regression adjustment based on observed covariate imbalances. That is, looking at the dreaded table 1 p-values to determine what covariates to adjust for in your analysis. I think this is also mistaken, but it’s a bit more complicated to show why.</p>
-<p>I rewrote the function above function to simulate three simple adjustment scenarios: adjusting for all covariates, adjusting for no covariates, and adjusting for only covariates that are imbalanced between treatment groups. The process that relates the treatment and the covariates to the outcome is a simple one: <span class="math display">\[Y_i = 2.5*trt + z_1*\beta_1*x_1 + ... + e_i\]</span>. The beta coefficients are randomly selected from a Uniform(0.1,2). And e_i ~ N(0, 5). Additionally, <span class="math inline">\(z_i\)</span> is a 1 or 0 generated from a bernoulli distribution with probability of success, <span class="math inline">\(p2\)</span>. Thus, each covariate has probability <span class="math inline">\(p2\)</span> of not being zero. I added this part to imitate the fact that we don’t necessarily know whether a covariate actually affects the outcome. Overall, the process that generates Y is simple, and the only possible misspecification is including variables that don’t affect the outcome (or failing to include those variables).</p>
-<p>Below I run 5000 simulations with the same parameter values in the previous run, plus p2 = .7 (the probability each covariate will be included in the process that generates Y).</p>
+<p>I rewrote the function above function to simulate three simple adjustment scenarios: adjusting for all covariates, adjusting for no covariates, and adjusting for only covariates that are imbalanced between treatment groups. The process that relates the treatment and the covariates to the outcome is a simple one: <span class="math display">\[Y_i = 2.5*trt + z_1*\beta_1*x_1 + ... + e_i\]</span>. The beta coefficients are randomly selected from a Uniform(0.1,2). And e_i ~ N(0, 5). Additionally, <span class="math inline">\(z_i\)</span> is a 1 or 0 generated from a bernoulli distribution with probability of success, <span class="math inline">\(p2\)</span>. Thus, each covariate has probability <span class="math inline">\(p2\)</span> of having an effect on the outcome. I added this part to imitate the fact that we don’t necessarily know whether a covariate actually affects the outcome. Overall, the process that generates Y is simple, and the only possible misspecification is including variables that don’t affect the outcome (or failing to include those variables).</p>
+<p>Below I run 5000 simulations with the same parameter values in the previous run, with the addition of p2 = .7 (the probability each covariate will be included in the process that generates Y).</p>
 <pre class="r"><code>simulation_function2 &lt;- function(n, p, p2, covariate_num, max_corr, x) {
-    
-    corr &lt;- ifelse(max_corr == 0, max_corr, runif(1, min = 0, max = max_corr))
-    ## Create fake data treatment
-    trt &lt;- rbinom(n, size = 1, p = p)
-    ## covariates: 10 slightly correlated mvn(0,1) distributed variables
-    mu &lt;- rep(0, covariate_num)
-    SIGMA &lt;- matrix(corr, nrow = covariate_num, ncol = covariate_num)
-    # Make diagonal = 1
-    diag(SIGMA) &lt;- 1
-    # simulate covariates
-    covariates &lt;- mvrnorm(n = n, mu = mu, Sigma = SIGMA)
-    
-    z &lt;- rbinom(covariate_num, size = 1, p = p2)
-    effects &lt;- runif(covariate_num, 0.1, 2)
-    
-    # outcome
-    Y0 &lt;- 0 * 2.5 + z * effects %*% t(covariates) + rnorm(n, 0, 5)
-    Y1 &lt;- 1 * 2.5 + Y0
-    Y &lt;- as.numeric(trt * Y1 + (1 - trt) * Y0)
-    
-    # Regression with three types of models: Adjust for all 10 covariates Adjust
-    # for no covariates Adjust for covariates with significant difference We
-    # know that treatment was randomly assigned independent of covariates
-    df &lt;- as_tibble(cbind(Y, trt, covariates))
-    
-    # t-test for covariate; returns p-value
-    which_vars &lt;- df %&gt;% gather(-Y, -trt, key = covariates, value = value) %&gt;% 
-        group_by(covariates) %&gt;% nest(-Y) %&gt;% mutate(p_value = map_lgl(data, 
-        function(x) {
-            t.test(x$value[x$trt == 0], x$value[x$trt == 1])$p.value &lt;= 0.05
-        })) %&gt;% dplyr::select(covariates, p_value)
-    
-    # model functions
-    model_func &lt;- function(i, values) {
-        analysis_df &lt;- select_at(i, vars(!!!syms(c(&quot;Y&quot;, &quot;trt&quot;, which_vars$covariates[values]))))
-        model &lt;- lm(Y ~ ., data = analysis_df)
-        # Get treatment estimate and p-value
-        estimate &lt;- summary(model)$coefficients[[&quot;trt&quot;, &quot;Estimate&quot;]]
-        p &lt;- summary(model)$coefficients[[&quot;trt&quot;, &quot;Pr(&gt;|t|)&quot;]]
-        tibble(estimate, p)
-    }
-    # Data set of Y, trt, and significant covariates
-    results_df &lt;- df %&gt;% nest() %&gt;% mutate(only_sig = map(data, function(i) model_func(i, 
-        which_vars$p_value)), all_vars = map(data, function(i) model_func(i, 
-        rep(TRUE, length(which_vars$covariates)))), no_vars = map(data, function(i) model_func(i, 
-        rep(FALSE, length(which_vars$covariates)))), sim = x)
-    results_df
+
+  corr &lt;- ifelse(max_corr == 0,
+                 max_corr,
+                 runif(1, min = 0, max = max_corr))
+  ##Create fake data
+  ##treatment
+  trt &lt;- rbinom(n, size = 1, p = p)
+  ##covariates: 10 slightly correlated mvn(0,1) distributed variables
+  mu &lt;- rep(0, covariate_num)
+  SIGMA &lt;- matrix(corr, nrow = covariate_num, ncol = covariate_num)
+  #Make diagonal = 1
+  diag(SIGMA) &lt;- 1
+  #simulate covariates
+  covariates &lt;- mvrnorm(n = n, mu = mu, Sigma = SIGMA)
+  
+  z &lt;- rbinom(covariate_num, size = 1, p = p2)
+  effects &lt;- runif(covariate_num,0.1,2)
+  
+  #outcome
+  Y0 &lt;- 0*2.5 + z*effects%*%t(covariates) + rnorm(n,0,5)
+  Y1 &lt;- 1*2.5 + Y0
+  Y &lt;- as.numeric(trt*Y1 + (1 - trt)*Y0)
+
+  #Regression with three types of models:
+  #Adjust for all 10 covariates
+  #Adjust for no covariates
+  #Adjust for covariates with significant difference
+  #We know that treatment was randomly assigned independent of covariates
+  df &lt;- as_tibble(cbind(Y,trt, covariates))
+  
+  #t-test for covariate; returns p-value
+  which_vars &lt;- 
+    df %&gt;%
+    gather(-Y,-trt, key = covariates, value = value) %&gt;%
+    group_by(covariates) %&gt;%
+    nest(-Y) %&gt;%
+    mutate(p_value = map_lgl(data, function(x) {
+      t.test(x$value[x$trt == 0], x$value[x$trt == 1])$p.value &lt;= .05
+    })) %&gt;%
+    dplyr::select(covariates,p_value) 
+  
+  #model functions
+  model_func &lt;- function(i, values) {
+    analysis_df &lt;-
+      select_at(i,
+                vars(!!!syms(c(
+                  &quot;Y&quot;, &quot;trt&quot;,
+                  which_vars$covariates[values]
+                ))))
+    model &lt;- lm(Y ~ ., data = analysis_df)
+    #Get treatment estimate and p-value
+    estimate &lt;- summary(model)$coefficients[[&quot;trt&quot;,&quot;Estimate&quot;]]
+    p &lt;- summary(model)$coefficients[[&quot;trt&quot;,&quot;Pr(&gt;|t|)&quot;]]
+    tibble(estimate,p)
+  }
+  #Data set of Y, trt, and significant covariates
+  results_df &lt;-
+    df %&gt;%
+    nest() %&gt;%
+    mutate(
+      only_sig = map(data, function(i)
+        model_func(i, which_vars$p_value)),
+      all_vars = map(data, function(i)
+        model_func(i, rep(
+          TRUE, length(which_vars$covariates)
+        ))),
+      no_vars = map(data,
+                    function(i)
+                      model_func(i, rep(
+                        FALSE, length(which_vars$covariates)
+                      ))),
+      sim = x
+    )
+  results_df
 }
 
-### Run simulations
+###Run simulations
 sims &lt;- 5000
 n &lt;- rep(100, length.out = sims)
-p &lt;- rep(0.5, length.out = sims)
-p2 &lt;- rep(0.7, length.out = sims)
+p &lt;- rep(.5, length.out = sims)
+p2 &lt;- rep(.7, length.out = sims)
 covariate_num &lt;- rep(10, length.out = sims)
-max_corr &lt;- rep(0.3, length.out = sims)
-param_l &lt;- list(n = n, p = p, p2 = p2, covariate_num = covariate_num, max_corr = max_corr, 
-    x = 1:sims)
-# simulation results
-results2 &lt;- pmap_dfr(param_l, function(n, p, p2, covariate_num, max_corr, x) {
-    simulation_function2(n = n, p = p, p2 = p2, covariate_num = covariate_num, 
-        max_corr = max_corr, x = x)
+max_corr &lt;- rep(.3, length.out = sims)
+param_l &lt;- list(n = n,
+                p = p,
+                p2 = p2,
+                covariate_num = covariate_num,
+                max_corr = max_corr,
+                x = 1:sims)
+#simulation results
+results2 &lt;- pmap_dfr(param_l, function(n,p,p2,covariate_num,max_corr, x) {
+  simulation_function2(n = n,
+                       p = p,
+                       p2 = p2,
+                       covariate_num = covariate_num,
+                       max_corr = max_corr,
+                       x = x)
 })
+                                                                     
 
-
-sim_results &lt;- results2 %&gt;% dplyr::select(-data, -sim) %&gt;% gather(key = specification, 
-    value = result) %&gt;% group_by(specification) %&gt;% do({
-    results2 %&gt;% dplyr::select(-data, -sim) %&gt;% gather(key = specification, 
-        value = result) %&gt;% filter(specification == .$specification) %&gt;% dplyr::select(specification, 
-        result) %&gt;% unnest() %&gt;% bind_rows()
-}) %&gt;% group_by(specification) %&gt;% summarize(mu_est = mean(estimate), var_est = var(estimate), 
-    power = mean(p &lt; 0.05))</code></pre>
+sim_results &lt;-
+ results2 %&gt;%
+  dplyr::select(-data,-sim) %&gt;%
+  gather(key = specification, value = result) %&gt;%
+  group_by(specification) %&gt;%
+  do({
+    results2 %&gt;%
+      dplyr::select(-data,-sim) %&gt;%
+      gather(key = specification, value = result) %&gt;%
+      filter(specification == .$specification) %&gt;%
+      dplyr::select(specification,result) %&gt;%
+      unnest() %&gt;%
+      bind_rows()
+    }) %&gt;%
+  group_by(specification) %&gt;%
+  summarize(mu_est = mean(estimate),
+            var_est = var(estimate),
+            power = mean(p &lt; .05))</code></pre>
 <p>The results of the simulation are summarized in the table below. mu_est is the estimate of the treatment effect, it should be 2.5. var_est is the variance estimate of the effect. And power is the proportion of p-values for the treatment effect that are less than .05.</p>
 <pre class="r"><code>knitr::kable(sim_results)</code></pre>
 <table>
@@ -198,20 +264,35 @@ sim_results &lt;- results2 %&gt;% dplyr::select(-data, -sim) %&gt;% gather(key =
 <p>We can see that pretty much all procedures are unbiased (there may be some simulation error, which is why they are not exactly 2.5), but that only adjusting for covariates that are significantly “imbalanced” has the lowest power. This is related to the fact that if a covariate is imbalanced, then there is some collinearity with the treatment.</p>
 <p>Below I plot a histogram of the simulated treatment effect for each procedure.</p>
 <pre class="r"><code>no_vars &lt;- bind_rows(results2$no_vars)
-plot1 &lt;- no_vars %&gt;% ggplot(aes(estimate)) + geom_histogram() + geom_vline(aes(xintercept = 2.5)) + 
-    xlim(c(-2.5, 7.5)) + ggtitle(&quot;Distribution of Treatment estimate \n
+plot1 &lt;-
+  no_vars %&gt;% 
+  ggplot(aes(estimate)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept =2.5)) +
+  xlim(c(-2.5,7.5)) +
+  ggtitle(&quot;Distribution of Treatment estimate \n
           adjusting for no covariates&quot;)
 
 all_vars &lt;- bind_rows(results2$all_vars)
-plot2 &lt;- all_vars %&gt;% ggplot(aes(estimate)) + geom_histogram() + geom_vline(aes(xintercept = 2.5)) + 
-    xlim(c(-2.5, 7.5)) + ggtitle(&quot;Distribution of Treatment estimate \n
+plot2 &lt;-
+  all_vars %&gt;% 
+  ggplot(aes(estimate)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept =2.5)) +
+  xlim(c(-2.5,7.5)) +
+  ggtitle(&quot;Distribution of Treatment estimate \n
           adjusting for all covariates&quot;)
 
 only_sig &lt;- bind_rows(results2$only_sig)
-plot3 &lt;- only_sig %&gt;% ggplot(aes(estimate)) + geom_histogram() + geom_vline(aes(xintercept = 2.5)) + 
-    xlim(c(-2.5, 7.5)) + ggtitle(&quot;Distribution of Treatment estimate \n
+plot3 &lt;-
+  only_sig %&gt;%
+  ggplot(aes(estimate)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept =2.5)) +
+  xlim(c(-2.5,7.5)) +
+  ggtitle(&quot;Distribution of Treatment estimate \n
           adjusting for &#39;imbalanced&#39; covariates&quot;)
-cowplot::plot_grid(plot1, plot2, plot3, nrow = 2)</code></pre>
+cowplot::plot_grid(plot1,plot2,plot3, nrow = 2)</code></pre>
 <pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
@@ -222,25 +303,44 @@ cowplot::plot_grid(plot1, plot2, plot3, nrow = 2)</code></pre>
 <p>The results above are based on a simulation where on average 70% of the covariates actually affect the outcome. Another interesting set up might be to see how the procedures fair when we change that to 10%.</p>
 <pre class="r"><code>sims &lt;- 5000
 n &lt;- rep(100, length.out = sims)
-p &lt;- rep(0.5, length.out = sims)
-p2 &lt;- rep(0.1, length.out = sims)
+p &lt;- rep(.5, length.out = sims)
+p2 &lt;- rep(.1, length.out = sims)
 covariate_num &lt;- rep(10, length.out = sims)
-max_corr &lt;- rep(0.3, length.out = sims)
-param_l &lt;- list(n = n, p = p, p2 = p2, covariate_num = covariate_num, max_corr = max_corr, 
-    x = 1:sims)
-# simulation results
-results3 &lt;- pmap_dfr(param_l, function(n, p, p2, covariate_num, max_corr, x) {
-    simulation_function2(n = n, p = p, p2 = p2, covariate_num = covariate_num, 
-        max_corr = max_corr, x = x)
+max_corr &lt;- rep(.3, length.out = sims)
+param_l &lt;- list(n = n,
+                p = p,
+                p2 = p2,
+                covariate_num = covariate_num,
+                max_corr = max_corr,
+                x = 1:sims)
+#simulation results
+results3 &lt;- pmap_dfr(param_l, function(n,p,p2,covariate_num,max_corr, x) {
+  simulation_function2(n = n,
+                       p = p,
+                       p2 = p2,
+                       covariate_num = covariate_num,
+                       max_corr = max_corr,
+                       x = x)
 })
 
-sim_results3 &lt;- results3 %&gt;% dplyr::select(-data, -sim) %&gt;% gather(key = specification, 
-    value = result) %&gt;% group_by(specification) %&gt;% do({
-    results3 %&gt;% dplyr::select(-data, -sim) %&gt;% gather(key = specification, 
-        value = result) %&gt;% filter(specification == .$specification) %&gt;% dplyr::select(specification, 
-        result) %&gt;% unnest() %&gt;% bind_rows()
-}) %&gt;% group_by(specification) %&gt;% summarize(mu_est = mean(estimate), var_est = var(estimate), 
-    power = mean(p &lt; 0.05))
+sim_results3 &lt;-
+ results3 %&gt;%
+  dplyr::select(-data,-sim) %&gt;%
+  gather(key = specification, value = result) %&gt;%
+  group_by(specification) %&gt;%
+  do({
+    results3 %&gt;%
+      dplyr::select(-data,-sim) %&gt;%
+      gather(key = specification, value = result) %&gt;%
+      filter(specification == .$specification) %&gt;%
+      dplyr::select(specification,result) %&gt;%
+      unnest() %&gt;%
+      bind_rows()
+    }) %&gt;%
+  group_by(specification) %&gt;%
+  summarize(mu_est = mean(estimate),
+            var_est = var(estimate),
+            power = mean(p &lt; .05))
 
 knitr::kable(sim_results3)</code></pre>
 <table>
@@ -255,21 +355,21 @@ knitr::kable(sim_results3)</code></pre>
 <tbody>
 <tr class="odd">
 <td align="left">all_vars</td>
-<td align="right">2.500710</td>
-<td align="right">1.246544</td>
-<td align="right">0.6054</td>
+<td align="right">2.506699</td>
+<td align="right">1.253088</td>
+<td align="right">0.6086</td>
 </tr>
 <tr class="even">
 <td align="left">no_vars</td>
-<td align="right">2.496520</td>
-<td align="right">1.149338</td>
-<td align="right">0.6426</td>
+<td align="right">2.505164</td>
+<td align="right">1.136340</td>
+<td align="right">0.6502</td>
 </tr>
 <tr class="odd">
 <td align="left">only_sig</td>
-<td align="right">2.501067</td>
-<td align="right">1.161117</td>
-<td align="right">0.6324</td>
+<td align="right">2.503735</td>
+<td align="right">1.156623</td>
+<td align="right">0.6418</td>
 </tr>
 </tbody>
 </table>
