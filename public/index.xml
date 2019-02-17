@@ -6,10 +6,19 @@
     <description>Recent content on Fledgling Statistician</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 30 Aug 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 17 Feb 2019 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Mostly Harmless Randomization Checking</title>
+      <link>/post/mostly-harmless-randomization-checking/</link>
+      <pubDate>Sun, 17 Feb 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/post/mostly-harmless-randomization-checking/</guid>
+      <description>I studied Economics as an undergraduate and oddly enough I never took a course in econometrics. At the time I was interested in experiments and the experimental design course was offered through the statistics department. So I ended up taking all my methods courses through the statistics department. It all worked out for me in the end, but I’ve always wanted to dedicate some time to properly learning econometrics. Luckily for me an economist friend gave me the book “Mostly Harmless Econometrics” a couple years ago.</description>
+    </item>
     
     <item>
       <title>Some books I read in August</title>

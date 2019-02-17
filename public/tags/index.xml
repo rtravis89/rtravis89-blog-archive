@@ -6,46 +6,10 @@
     <description>Recent content in Tags on Fledgling Statistician</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 22 Apr 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 30 Aug 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/index.xml" rel="self" type="application/rss+xml" />
     
-    
-    <item>
-      <title> Nfl  Regression  Stan  Statistics  Brms</title>
-      <link>/tags/-nfl--regression--stan--statistics--brms/</link>
-      <pubDate>Sun, 22 Apr 2018 00:00:00 +0000</pubDate>
-      
-      <guid>/tags/-nfl--regression--stan--statistics--brms/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title> Nfl  Stan  Statistics</title>
-      <link>/tags/-nfl--stan--statistics/</link>
-      <pubDate>Sun, 15 Apr 2018 00:00:00 +0000</pubDate>
-      
-      <guid>/tags/-nfl--stan--statistics/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title> Prediction  Statistics  Machine Learning</title>
-      <link>/tags/-prediction--statistics--machine-learning/</link>
-      <pubDate>Thu, 19 Apr 2018 00:00:00 +0000</pubDate>
-      
-      <guid>/tags/-prediction--statistics--machine-learning/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title> Stan  Statistics</title>
-      <link>/tags/-stan--statistics/</link>
-      <pubDate>Sat, 14 Apr 2018 00:00:00 +0000</pubDate>
-      
-      <guid>/tags/-stan--statistics/</guid>
-      <description></description>
-    </item>
     
     <item>
       <title>Books</title>
@@ -66,6 +30,33 @@
     </item>
     
     <item>
+      <title>Nfl Regression Stan Statistics Brms</title>
+      <link>/tags/nfl-regression-stan-statistics-brms/</link>
+      <pubDate>Sun, 22 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/nfl-regression-stan-statistics-brms/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Nfl Stan Statistics</title>
+      <link>/tags/nfl-stan-statistics/</link>
+      <pubDate>Sun, 15 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/nfl-stan-statistics/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Prediction Statistics Machine Learning</title>
+      <link>/tags/prediction-statistics-machine-learning/</link>
+      <pubDate>Thu, 19 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/prediction-statistics-machine-learning/</guid>
+      <description></description>
+    </item>
+    
+    <item>
       <title>Rct</title>
       <link>/tags/rct/</link>
       <pubDate>Sun, 18 Feb 2018 00:00:00 +0000</pubDate>
@@ -80,6 +71,15 @@
       <pubDate>Sun, 25 Feb 2018 00:00:00 +0000</pubDate>
       
       <guid>/tags/regression/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Stan Statistics</title>
+      <link>/tags/stan-statistics/</link>
+      <pubDate>Sat, 14 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/stan-statistics/</guid>
       <description></description>
     </item>
     

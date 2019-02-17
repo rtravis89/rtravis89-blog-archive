@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Stan Statistics on Fledgling Statistician</title>
+    <link>/tags/stan-statistics/</link>
+    <description>Recent content in Stan Statistics on Fledgling Statistician</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 14 Apr 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/tags/stan-statistics/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Stan Basics</title>
+      <link>/post/stan-basics/</link>
+      <pubDate>Sat, 14 Apr 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/stan-basics/</guid>
+      <description>I attended a great short course on bayesian workflow using Stan at the New England Statistics Symposium yesterday. If you don’t know, Stan is “a state-of-the-art platform for statistical modeling and high-performance statistical computation”. You can easily interface with Stan through R (or python or a bunch of other languages). I figured it would be valuable for myself, and possibly others, to work through a few different problems in Stan and share my code.</description>
+    </item>
+    
+  </channel>
+</rss>

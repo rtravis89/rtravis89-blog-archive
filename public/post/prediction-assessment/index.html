@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.32.2" />
+<meta name="generator" content="Hugo 0.54.0" />
 
 
 <title>Prediction Assessment with Scoring Rules - Fledgling Statistician</title>
@@ -71,7 +71,10 @@
     
 
     <div class="article-content">
-      <p>Anyone trying to learn how to build and assess prediction models is immediately swamped with a litany of strange sounding performance metrics. In the binary outcome case you might encounter: sensitivity, specificity, precision, recall, accuracy, just to name a few. Fundamentally, all of the measures listed require the analyst to provide a category label for each element predicted. This is sometimes provided automatically with an algorithm. Or if the output of the model is a probability, a cut off is chosen and all elements below the cut off are classified one way, and all those above the other way. The probability cutoff that maximizes one or the other metric is then chosen. But how to choose which one or more of these metrics and why?</p>
+      
+
+
+<p>Anyone trying to learn how to build and assess prediction models is immediately swamped with a litany of strange sounding performance metrics. In the binary outcome case you might encounter: sensitivity, specificity, precision, recall, accuracy, just to name a few. Fundamentally, all of the measures listed require the analyst to provide a category label for each element predicted. This is sometimes provided automatically with an algorithm. Or if the output of the model is a probability, a cut off is chosen and all elements below the cut off are classified one way, and all those above the other way. The probability cutoff that maximizes one or the other metric is then chosen. But how to choose which one or more of these metrics and why?</p>
 <p>Instead of answering this question I’m going to argue that the question is misplaced. None of the metrics above is (solely or jointly) appropriate for model evaluation and that choosing a probability cutoff so as to optimize one or the other metric is often misguided. I’ll argue instead that the assessment of prediction methods should rely on (at least) two measures of quality, discrimination and calibration, and that these measures are jointly considered by using what are called proper scoring rules. Importantly, good performance on both metrics does not imply the model is <a href="https://www.ncbi.nlm.nih.gov/pubmed/12012295">useful</a>. For the sake of simplicity, I’m only going to cover the binary outcome case though the conclusions can be extended to any outcome. In the event that a yes/no or class label decision is required, since probabilities can be difficult to work with and require judgement, the cutoff(s) should be chosen based on the relative costs and benefits of applying the separate labels. This is fundamentally a decision theory problem outside the scope of this post.</p>
 <div id="discrimination-and-calibration" class="section level3">
 <h3>Discrimination and Calibration</h3>

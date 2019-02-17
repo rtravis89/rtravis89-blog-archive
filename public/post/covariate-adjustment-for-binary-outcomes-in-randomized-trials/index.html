@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.32.2" />
+<meta name="generator" content="Hugo 0.54.0" />
 
 
 <title>Covariate Adjustment for Binary Outcomes in Randomized Trials - Fledgling Statistician</title>
@@ -76,7 +76,10 @@
     
 
     <div class="article-content">
-      <div id="introduction" class="section level1">
+      
+
+
+<div id="introduction" class="section level1">
 <h1>Introduction</h1>
 <p>A common misconception about randomized clinical trials is that the randomization process should balance any particular covariate across the arms of the trial and that therefore there is no benefit to controlling for covariates with a regression model unless a particular covariate happens to be unbalanced by chance. Determining whether a covariate is considered unbalanced amounts to performing a significance test comparing the arms and checking to see if the p-value is below some threshold (.05 for instance). This is wrong on two points.</p>
 <p>Randomization does not ensure balance for any particular covariate. In fact it’s essentially certain that some covariates, measured or unmeasured, will be unbalanced. And secondly, even if the arms are “balanced” for a particular covariate ,in the sense of there being no significant difference across the arms, there is still value in adjusting for the covariate. Specifically, the more strongly related the covariate is with the outcome, the more beneficial the adjustment regardless of whether there is a significant difference. The nature of the benefit differs depending on whether the outcome being studied is continuous or binary and the measure being used.</p>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.32.2" />
+<meta name="generator" content="Hugo 0.54.0" />
 
 
 <title>Odds ratios and logistic regression basics - Fledgling Statistician</title>
@@ -76,7 +76,10 @@
     
 
     <div class="article-content">
-      <p>Binary outcome variables that only take on two distinct values such as alive vs. not alive are very common in medicine and elsewhere. Traditionally, relating these variables to explanatory categorical variables of interest was and often is done using what are called contingency tables. When the number of explanatory variables of interest is small and the number of categories for said predictors is few, these contingency table methods can be appropriate. However, when there are possibly many explanatory variables, the variables are not categorical, or the variables have many categories, these methods either won’t work or are too cumbersome. Luckily, there exists a regression technique called logistic regression that generalizes these methods to handle all of the above issues and more. In this post I’d like to cover the basics of interpreting logistic regressions with multiple explanatory variables. Before that, it’s necessary to understand risk, odds ratios, and their connection to contingency tables. In addition, some common related statistical pitfalls will be discussed.</p>
+      
+
+
+<p>Binary outcome variables that only take on two distinct values such as alive vs. not alive are very common in medicine and elsewhere. Traditionally, relating these variables to explanatory categorical variables of interest was and often is done using what are called contingency tables. When the number of explanatory variables of interest is small and the number of categories for said predictors is few, these contingency table methods can be appropriate. However, when there are possibly many explanatory variables, the variables are not categorical, or the variables have many categories, these methods either won’t work or are too cumbersome. Luckily, there exists a regression technique called logistic regression that generalizes these methods to handle all of the above issues and more. In this post I’d like to cover the basics of interpreting logistic regressions with multiple explanatory variables. Before that, it’s necessary to understand risk, odds ratios, and their connection to contingency tables. In addition, some common related statistical pitfalls will be discussed.</p>
 <div id="contingency-tables-and-simpsons-paradox" class="section level1">
 <h1>Contingency Tables and Simpson’s Paradox</h1>
 <p>Contingency tables are a way of representing the relationship between two or more categorical variables. Below is a 2x2 contingency with data from the indictments of 674 defendants involved in multiple murders in Florida from 1976 to 1987. The data is presented in Alan Agresti’s book “An introduction to categorical data analysis”. The table relates the death penalty verdict to the defendant’s race. The proportion of black defendants who received a “yes” verdict is p = 15/(176+15), or about 8%. The number of white defendants who received a “yes” verdict is p = 53/(430+53), or about 11%. This gives an odds ratio of (53x176)/(430x5) or about 1.45. This would appear to indicate that the odds for receiving the death penalty are higher for white defendants. However, this is not the case.</p>

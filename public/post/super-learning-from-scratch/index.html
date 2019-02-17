@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.32.2" />
+<meta name="generator" content="Hugo 0.54.0" />
 
 
 <title>Super Learning from Scratch - Fledgling Statistician</title>
@@ -76,7 +76,10 @@
     
 
     <div class="article-content">
-      <div id="introduction" class="section level1">
+      
+
+
+<div id="introduction" class="section level1">
 <h1>Introduction</h1>
 <p>Super Learning is a conceptually simple way of combining predictions from different models using cross validation. It simply uses the cross-validated results to form an optimal weighted combination of predictions. Combining predictions across models, typically refered to as stacking or stacked ensembles, is not new. I’ve seen references as far back as about 30 years, though I wouldn’t be surprised if it was much older. However, as far as I know, it was only relatively recently (within 15 years) that some nice theoretical properties were proven for a particular type of stacking called super learning. The paper by Mark van der Laan establishing the results for the super learner can be found here <a href="http://biostats.bepress.com/ucbbiostat/paper222/">Super Learner by Mark van der Laan</a>.</p>
 <p>I learned about super learning by attending a short course at Harvard school of public health led by Dr. Sherri Rose and Dr. Laura Hatfield. Dr. Rose gave a very nice presentation on the super learner and a few examples using it from her own research. The thing that really stood out to me about this method was its unification of the prediction model building process. There is no longer a need to pick a single model as best. This can be particularly difficult if several models perform similarly. The super learner will typically perform as good as the single best performing model and often better. Below I work through building a super learner from scratch.</p>

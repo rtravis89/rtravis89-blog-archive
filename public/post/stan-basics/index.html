@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.32.2" />
+<meta name="generator" content="Hugo 0.54.0" />
 
 
 <title>Stan Basics - Fledgling Statistician</title>
@@ -76,7 +76,10 @@
     
 
     <div class="article-content">
-      <p>I attended a great short course on bayesian workflow using Stan at the New England Statistics Symposium yesterday. If you don’t know, <a href="http://mc-stan.org/">Stan</a> is “a state-of-the-art platform for statistical modeling and high-performance statistical computation”. You can easily interface with Stan through R (or python or a bunch of other languages). I figured it would be valuable for myself, and possibly others, to work through a few different problems in Stan and share my code. It’s a bit intimidating at first, but that’s always true of learning new languages. In this post I work through some simple one parameter models. The focus is on fitting the models in Stan and comparing them to analytically derived results, so I’m not going to go over diagnostics or general work flow.</p>
+      
+
+
+<p>I attended a great short course on bayesian workflow using Stan at the New England Statistics Symposium yesterday. If you don’t know, <a href="http://mc-stan.org/">Stan</a> is “a state-of-the-art platform for statistical modeling and high-performance statistical computation”. You can easily interface with Stan through R (or python or a bunch of other languages). I figured it would be valuable for myself, and possibly others, to work through a few different problems in Stan and share my code. It’s a bit intimidating at first, but that’s always true of learning new languages. In this post I work through some simple one parameter models. The focus is on fitting the models in Stan and comparing them to analytically derived results, so I’m not going to go over diagnostics or general work flow.</p>
 <div id="simple-one-parameters-models" class="section level2">
 <h2>Simple one parameters models</h2>
 <p>I figured it would be valuable to start with coding some simple one parameter models where the answer can be known analytically (you can solve the answer by hand). Stan is typically used for some really cool stuff, but that can be intimidating if you’re just trying to dabble. The two simple examples I chose were from Jim Albert’s book <a href="https://www.amazon.com/Bayesian-Computation-R-Use/dp/0387922970/ref=sr_1_5?ie=UTF8&amp;qid=1523725608&amp;sr=8-5&amp;keywords=jim+albert">Bayesian Computation with R</a>. The first is a normal model with known mean and unknown variance and the second is a poisson model with an unknown rate parameter.</p>

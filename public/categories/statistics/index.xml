@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Statistics on Fledgling Statistician</title>
+    <link>/categories/statistics/</link>
+    <description>Recent content in Statistics on Fledgling Statistician</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 17 Feb 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/categories/statistics/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Mostly Harmless Randomization Checking</title>
+      <link>/post/mostly-harmless-randomization-checking/</link>
+      <pubDate>Sun, 17 Feb 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/post/mostly-harmless-randomization-checking/</guid>
+      <description>I studied Economics as an undergraduate and oddly enough I never took a course in econometrics. At the time I was interested in experiments and the experimental design course was offered through the statistics department. So I ended up taking all my methods courses through the statistics department. It all worked out for me in the end, but I’ve always wanted to dedicate some time to properly learning econometrics. Luckily for me an economist friend gave me the book “Mostly Harmless Econometrics” a couple years ago.</description>
+    </item>
+    
+  </channel>
+</rss>

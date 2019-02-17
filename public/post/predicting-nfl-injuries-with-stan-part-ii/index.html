@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.32.2" />
+<meta name="generator" content="Hugo 0.54.0" />
 
 
 <title>Predicting NFL Injuries with Stan Part II - Fledgling Statistician</title>
@@ -76,7 +76,10 @@
     
 
     <div class="article-content">
-      <p><a href="http://ryantravis.netlify.com/post/stan-basics/">Previously</a> I use data from armchair analysis to build a simple model to predict whether an NFL player would have an injury based only on their position. I restricted the analysis to QBs, RBs, TEs, and WRs. In this post I’d like to expand the model to include 3 years of injury data (which is all I have), as well as include some additional covariates such as player height, weight, and age. The inclusion of multiple years of data makes building the model more tricky since some players will be included in each years’ data.</p>
+      
+
+
+<p><a href="http://ryantravis.netlify.com/post/stan-basics/">Previously</a> I use data from armchair analysis to build a simple model to predict whether an NFL player would have an injury based only on their position. I restricted the analysis to QBs, RBs, TEs, and WRs. In this post I’d like to expand the model to include 3 years of injury data (which is all I have), as well as include some additional covariates such as player height, weight, and age. The inclusion of multiple years of data makes building the model more tricky since some players will be included in each years’ data.</p>
 <p>Additionally, I thought it would be more interesting to predict the number of games in a season a player is unable to play due to injury. A common model for counts is the poisson model. This model has a single parameter for its mean and variance, and so is not very flexible. It’s easy to imagine two simple processes by which a player can remain injury free all year. The first is they are simply lucky and don’t get hurt. The other is that they don’t play very much. Since there are (at least) two processes that can produce zeros for the number of games a player misses, I’m confident that there will be greater than expected number of zeros. Therefore it makes sense to include an additional parameter to account for this in the model.</p>
 <p>To simplify the coding I’m going to use the excellent <a href="https://cran.r-project.org/web/packages/brms/index.html">brms</a> package in R. This package allows you to fit models in Stan using standard R formula syntax. It’ll also be helpful since it allows the use of splines to model potentially nonlinear predictors like height, weight, and age. Additionally, brms provides a ton of other functionality I’ll use. This post will be more involved than the previous one and so I’ve tried to split it into four sections: data pre-processing, exploratory analysis, statistical modeling, model comparison, and finally a simple simulation using the model.</p>
 <div id="data-pre-processing" class="section level3">
