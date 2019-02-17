@@ -13,7 +13,7 @@ knitr::opts_chunk$set(warning = FALSE)
 
 I studied Economics as an undergraduate and oddly enough I never took a course in econometrics. At the time I was interested in experiments and the experimental design course was offered through the statistics department. So I ended up taking all my methods courses through the statistics department. It all worked out for me in the end, but I've always wanted to dedicate some time to properly learning econometrics. Luckily for me an economist friend gave me the book "Mostly Harmless Econometrics" a couple years ago. I've finally started reading the book and it's excellent.
 
-The quality of the book is very high, but there are a few instances of what I would consider not good practice. The one I'm interested in writing about in this post stems from page 18, where the authors' write "The first question to ask about a randomized experiment is whether the randomization successfully balanced subjects across the different treatment groups". They then propose that you can answer this question by looking to see whether the differences in pre-treatment covariates are small and non-significant. (Another econometric resource that says to do this is Ben Lambert's [Graduate Econometrics youtube series](https://www.youtube.com/watch?v=FLQ_ittU1gc&index=60&list=PLwJRxp3blEvaxmHgI2iOzNP6KGLSyd4dz&t=2s). There are a couple problems with this approach.
+The quality of the book is very high, but there are a few instances of what I would consider not good practice. The one I'm interested in writing about in this post stems from page 18, where the authors' write "The first question to ask about a randomized experiment is whether the randomization successfully balanced subjects across the different treatment groups". They then propose that you can answer this question by looking to see whether the differences in pre-treatment covariates are small and non-significant. (Another econometric resource that says to do this is Ben Lambert's) [Graduate Econometrics youtube series](https://www.youtube.com/watch?v=FLQ_ittU1gc&index=60&list=PLwJRxp3blEvaxmHgI2iOzNP6KGLSyd4dz&t=2s). There are a couple problems with this approach.
 
 The whole idea that Randomization has failed if it does not force balance between covariates is, I think, mistaken. If it is not mistaken, then why isn't randomization pointless since you could forcibly balance or match on observed covariates (why leave it to chance to ruin your trial?). Of course we also care about unobserved covariates as well. However, there are essentially an infinite number of them. The probability that at least 1 has a significant difference across treatment groups must be close to 1 (philosophers have in fact made this argument against randomization). See this John Myles White [post](http://www.johnmyleswhite.com/notebook/2017/04/06/covariate-based-diagnostics-for-randomized-experiments-are-often-misleading/) for an example where there is always imbalance.
 
@@ -27,13 +27,14 @@ A separate issue with the suggestion to test balance between treatment groups is
 
 Just to give a simple demonstration of the effects of multiple comparison testing on the type I error, I wrote an R function that performs a simulation. The set up is a binary treatment variable with probability of assignment to the treatment group p, X number of covariates that are drawn from a multivariate standard normal with each pairwise correlation randomly generated from a uniform [0,M], where M is the maximum correlation chosen by the user. 
 
-For this particular set up, I chose a sample size of 100, treatment assignment probability .5, 10 covariates, a maximum correlation .3, and ran 5000 simulations. The way the function is written, all the arguments are passed as named columns in a dataframe where the number of rows is the number of simulations.
+For this particular set up, I chose a sample size of 100, treatment assignment probability .5, 10 covariates, a maximum correlation .3, and ran 5000 simulations. 
 
 ```{r, warning = FALSE, cache = TRUE}
 ####Checking Randomization simulation
+library(MASS)
 library(tidyverse)
 library(cowplot)
-library(MASS)
+
 
 theme_set(theme_bw())
 
@@ -106,7 +107,7 @@ p2
 
 ```
 
-In this particular simulation, the proportion of total p-values less than .05 was `r p1`, which is close to what we expect. However, the relevant error rate is how many particular simulations produce at least 1 significant p-value and that rate is`r p2`. This number is less than the bound given from the equation above, which for 10 tests give an error rate of about .4. (The bound assumes the tests are independent, but in our case there is correlation so the error rate is lower than the bound.) So you can see that even in a situation where there is no association at all between covariates and treatment groups, checking for balance gives the wrong answer quite often.
+In this particular simulation, the proportion of total p-values less than .05 was `r p1`, which is close to what we expect. However, the relevant error rate is how many particular simulations produce at least 1 significant p-value and that rate is `r p2`. This number is less than the bound given from the equation above, which for 10 tests give an error rate of about .4. (The bound assumes the tests are independent, but in our case there is correlation so the error rate is lower than the bound.) So you can see that even in a situation where there is no association at all between covariates and treatment groups, checking for balance gives the wrong answer quite often.
 
 The bar plot below shows how many significant p-values were produced for each simulation.
 
@@ -247,10 +248,10 @@ sim_results <-
   group_by(specification) %>%
   summarize(mu_est = mean(estimate),
             var_est = var(estimate),
-            power = mean(p < .05))
+            power = mean(p <= .05))
 ```
 
-The results of the simulation are summarized in the table below. mu_est is the estimate of the treatment effect, it should be 2.5. var_est is the variance estimate of the effect. And power is the proportion of p-values for the treatment effect that are less than .05.
+The results of the simulation are summarized in the table below. mu_est is the estimate of the treatment effect, it should be 2.5. var_est is the variance of the estimated mus. And power is the proportion of p-values for the treatment effect that are less than or equal to .05.
 
 ```{r}
 knitr::kable(sim_results)
@@ -343,7 +344,9 @@ sim_results3 <-
 knitr::kable(sim_results3)
 ```
 
-In this case, it looks like the efficiency gain (in terms of power) disappears if 9 out of 10 covariates included in our model are not actually related to the outcome. I think an even more interesting question is how do these results change under greater model mispecification, non-linearity, non-additivity, correlated errors, etc. Maybe that can be the topic of a different post.
+In this case, it looks like the efficiency gain (in terms of power) disappears if 9 out of 10 covariates included in our model are not actually related to the outcome. But not adjusting at all fairs as well as adjusting only those that are significant. 
+
+I think an even more interesting question is how do these results change under greater model mispecification, non-linearity, non-additivity, correlated errors, etc. Maybe that can be the topic of a different post.
 
 # Bottom line
 
