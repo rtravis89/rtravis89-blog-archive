@@ -69,15 +69,15 @@ plots_df <-
       geom_line() +
       ggtitle(paste0(z, " ", y))
   }))
-#Produce plots
-plots_df$line_plot
+
+plots_df
 ```
 
 #### Option 2
 
 A related but separate way of generating the same plots is to create a dataframe of arguments that are then passed to the plotting function. The plotting function in this case will filter the data set based on the arguments. This bypasses the need to use nest(). I also use the purrr function walk, which produces behavior (prints the plots) but does not return anything. 
 
-```{r}
+```{r, eval = FALSE}
 #Plot using walk()
 args <- expand(daily_df, category, state)
 
@@ -94,4 +94,8 @@ walk2(args$category,args$state, function(x,y) {
 
 ```
 
-I don't have a strong preference for either of these options. The second is a little more simple in my mind, since it's essentially a fancy for loop.
+I don't have a strong preference for either of these options. The second is a little more simple in my mind, since it's essentially a fancy for loop. The plots from option 1 are produced below.
+
+```{r}
+plots_df$line_plot
+```
