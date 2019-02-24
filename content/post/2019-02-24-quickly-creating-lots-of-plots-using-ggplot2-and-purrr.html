@@ -1,0 +1,195 @@
+---
+title: Quickly creating lots of plots using ggplot2 and purrr
+author: Ryan Travis
+date: '2019-02-24'
+slug: quickly-creating-lots-of-plots-using-ggplot-and-purrr
+categories: [visualization]
+tags: [ggplot2]
+---
+
+
+
+<p>Plotting and visualizing data are two of the most helpful and common activities for data analysts/scientists/whatevers. When I first started learning R, I would generate each plot individually, sometimes using a lot of copy-paste. This was fine in school, but it became much too time consuming and painful when I started working full-time.</p>
+<p>The difficulties I’ve encountered are often of the sort where I need to generate a bunch of similar looking plots. For instance, two common scenarios are trying to get a feel for a new data set I’m working with or trying to diagnose issues in the data processing pipeline. This post is going to demonstrate two ways I like to generate plots using 2017 nursing home staffing data from data.cms.gov.</p>
+<p>CMS produces data sets of daily staffing data for (more or less) every nursing home in the US on a quarterly basis called the “Payroll Based Journal”. The data are freely available to the public. I’ve already downloaded the 4 quarters worth of data from data.cms.gov and combined them into a single data set called pbj_df.</p>
+<p>The first thing I want to do is examine the data set.</p>
+<pre class="r"><code>glimpse(pbj_df)</code></pre>
+<pre><code>## Observations: 5,159,102
+## Variables: 10
+## $ provnum       &lt;chr&gt; &quot;015012&quot;, &quot;015012&quot;, &quot;015012&quot;, &quot;015012&quot;, &quot;015012&quot;...
+## $ state         &lt;chr&gt; &quot;AL&quot;, &quot;AL&quot;, &quot;AL&quot;, &quot;AL&quot;, &quot;AL&quot;, &quot;AL&quot;, &quot;AL&quot;, &quot;AL&quot;, ...
+## $ workdate      &lt;dbl&gt; 20170701, 20170702, 20170703, 20170704, 20170705...
+## $ mdscensus     &lt;dbl&gt; 48, 48, 47, 47, 47, 45, 45, 44, 43, 45, 47, 46, ...
+## $ hrs_rn        &lt;dbl&gt; 21.06, 21.27, 21.80, 8.73, 0.00, 12.28, 0.00, 22...
+## $ hrs_rndon     &lt;dbl&gt; 0, 0, 8, 8, 8, 8, 8, 0, 8, 16, 16, 8, 8, 8, 0, 0...
+## $ hrs_rnadmin   &lt;dbl&gt; 1.23, 0.00, 8.50, 5.68, 17.71, 18.86, 19.46, 0.0...
+## $ hrs_lpn       &lt;dbl&gt; 37.25, 37.84, 38.05, 52.80, 40.07, 25.10, 50.58,...
+## $ hrs_lpn_admin &lt;dbl&gt; 0.00, 0.00, 7.85, 0.00, 9.82, 8.63, 10.27, 0.00,...
+## $ hrs_na_trn    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...</code></pre>
+<p>We see that it contains about 5 million rows and 10 columns. The data contains a single observation for each day of 2017 for each nursing home. For my purposes here I’m not interested in individual facilities, so I’m going to generate aggregates for each labor category, day, and state. I can do that easily with a couple tidyverse functions. (I’m only going to do a subset of 5 states because it’s overkill to produce over 150 plots.)</p>
+<p>The gather function stacks all the labor category hour values into one column (called hours), with another another column (called category) that tells me which labor category those values belong too. This type of data set structure is often called a “long data set”. It’s important to have the data in this form because I want do processing by groups of data and I can not use the category variable as a group. I also create a new variable called “weekend”, that tells me whether the workdate falls on the weekend.</p>
+<pre class="r"><code>daily_df &lt;-
+  pbj_df %&gt;%
+  mutate(workdate = as.Date(as.character(workdate), 
+                            format = &quot;%Y%m%d&quot;,
+                            origin = &quot;2017-01-01&quot;)) %&gt;%
+  gather(-provnum,-workdate,-state,
+         key = category, value = hours) %&gt;%
+  group_by(category, state, workdate) %&gt;%
+  summarize(daily_hours = sum(hours)) %&gt;%
+  mutate(weekend = case_when(
+    wday(workdate) %in% c(1,7) ~ &quot;Weekend&quot;,
+    TRUE ~ &quot;Weekday&quot;
+  )) %&gt;%
+  filter(state %in% c(&quot;AR&quot;,&quot;AK&quot;,&quot;AL&quot;,&quot;MA&quot;,&quot;WV&quot;))
+
+glimpse(daily_df)</code></pre>
+<pre><code>## Observations: 12,775
+## Variables: 5
+## Groups: category, state [35]
+## $ category    &lt;chr&gt; &quot;hrs_lpn&quot;, &quot;hrs_lpn&quot;, &quot;hrs_lpn&quot;, &quot;hrs_lpn&quot;, &quot;hrs_l...
+## $ state       &lt;chr&gt; &quot;AK&quot;, &quot;AK&quot;, &quot;AK&quot;, &quot;AK&quot;, &quot;AK&quot;, &quot;AK&quot;, &quot;AK&quot;, &quot;AK&quot;, &quot;A...
+## $ workdate    &lt;date&gt; 2017-01-01, 2017-01-02, 2017-01-03, 2017-01-04, 2...
+## $ daily_hours &lt;dbl&gt; 329.74, 326.81, 331.56, 307.94, 315.16, 306.59, 32...
+## $ weekend     &lt;chr&gt; &quot;Weekend&quot;, &quot;Weekday&quot;, &quot;Weekday&quot;, &quot;Weekday&quot;, &quot;Weekd...</code></pre>
+<div id="option-1" class="section level4">
+<h4>Option 1</h4>
+<p>Now that I have my data aggregated, I can begin plotting. The first method that can be used to generate a lot of plots is to group the data and then use the nest() function. This creates subsets the data based on the grouping variables. These can then be passed as arguments to a function that generates a plot of each subset of data. If this is done within dplyr’s mutate, then each plot can be stored in a list column which can be referenced later (though this is not necessary). The code below does this for the CMS staffing data.</p>
+<pre class="r"><code>#Plots using nest()
+plots_df &lt;-
+  daily_df  %&gt;%
+  group_by(category, state) %&gt;%
+  nest() %&gt;%
+  mutate(line_plot = pmap(list(data,category,state), function(x, y, z) {
+    x %&gt;%
+      ggplot(aes(x = workdate, y = daily_hours, shape = weekend)) +
+      geom_point() +
+      geom_line() +
+      ggtitle(paste0(z, &quot; &quot;, y))
+  }))
+#Produce plots
+plots_df$line_plot</code></pre>
+<pre><code>## [[1]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre><code>## 
+## [[2]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-2.png" width="672" /></p>
+<pre><code>## 
+## [[3]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-3.png" width="672" /></p>
+<pre><code>## 
+## [[4]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-4.png" width="672" /></p>
+<pre><code>## 
+## [[5]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-5.png" width="672" /></p>
+<pre><code>## 
+## [[6]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-6.png" width="672" /></p>
+<pre><code>## 
+## [[7]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-7.png" width="672" /></p>
+<pre><code>## 
+## [[8]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-8.png" width="672" /></p>
+<pre><code>## 
+## [[9]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-9.png" width="672" /></p>
+<pre><code>## 
+## [[10]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-10.png" width="672" /></p>
+<pre><code>## 
+## [[11]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-11.png" width="672" /></p>
+<pre><code>## 
+## [[12]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-12.png" width="672" /></p>
+<pre><code>## 
+## [[13]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-13.png" width="672" /></p>
+<pre><code>## 
+## [[14]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-14.png" width="672" /></p>
+<pre><code>## 
+## [[15]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-15.png" width="672" /></p>
+<pre><code>## 
+## [[16]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-16.png" width="672" /></p>
+<pre><code>## 
+## [[17]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-17.png" width="672" /></p>
+<pre><code>## 
+## [[18]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-18.png" width="672" /></p>
+<pre><code>## 
+## [[19]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-19.png" width="672" /></p>
+<pre><code>## 
+## [[20]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-20.png" width="672" /></p>
+<pre><code>## 
+## [[21]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-21.png" width="672" /></p>
+<pre><code>## 
+## [[22]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-22.png" width="672" /></p>
+<pre><code>## 
+## [[23]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-23.png" width="672" /></p>
+<pre><code>## 
+## [[24]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-24.png" width="672" /></p>
+<pre><code>## 
+## [[25]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-25.png" width="672" /></p>
+<pre><code>## 
+## [[26]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-26.png" width="672" /></p>
+<pre><code>## 
+## [[27]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-27.png" width="672" /></p>
+<pre><code>## 
+## [[28]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-28.png" width="672" /></p>
+<pre><code>## 
+## [[29]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-29.png" width="672" /></p>
+<pre><code>## 
+## [[30]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-30.png" width="672" /></p>
+<pre><code>## 
+## [[31]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-31.png" width="672" /></p>
+<pre><code>## 
+## [[32]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-32.png" width="672" /></p>
+<pre><code>## 
+## [[33]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-33.png" width="672" /></p>
+<pre><code>## 
+## [[34]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-34.png" width="672" /></p>
+<pre><code>## 
+## [[35]]</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-4-35.png" width="672" /></p>
+</div>
+<div id="option-2" class="section level4">
+<h4>Option 2</h4>
+<p>A related but separate way of generating the same plots is to create a dataframe of arguments that are then passed to the plotting function. The plotting function in this case will filter the data set based on the arguments. This bypasses the need to use nest(). I also use the purrr function walk, which produces behavior (prints the plots) but does not return anything.</p>
+<pre class="r"><code>#Plot using walk()
+args &lt;- expand(daily_df, category, state)
+
+walk2(args$category,args$state, function(x,y) {
+  plot &lt;-
+    daily_df %&gt;%
+    filter(category == x &amp; state == y) %&gt;%
+    ggplot(aes(x = workdate, y = daily_hours, shape = weekend)) +
+    geom_point() +
+    geom_line() +
+    ggtitle(paste0(y, &quot; &quot;,x))
+  print(plot)
+  })</code></pre>
+<p><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-1.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-2.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-3.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-4.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-5.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-6.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-7.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-8.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-9.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-10.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-11.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-12.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-13.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-14.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-15.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-16.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-17.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-18.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-19.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-20.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-21.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-22.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-23.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-24.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-25.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-26.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-27.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-28.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-29.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-30.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-31.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-32.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-33.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-34.png" width="672" /><img src="/post/2019-02-24-quickly-creating-lots-of-plots-using-ggplot2-and-purrr_files/figure-html/unnamed-chunk-5-35.png" width="672" /></p>
+<p>I don’t have a strong preference for either of these options. The second is a little more simple in my mind, since it’s essentially a fancy for loop.</p>
+</div>

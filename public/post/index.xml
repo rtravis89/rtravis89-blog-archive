@@ -6,10 +6,20 @@
     <description>Recent content in Posts on Fledgling Statistician</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 17 Feb 2019 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 24 Feb 2019 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Quickly creating lots of plots using ggplot2 and purrr</title>
+      <link>/post/quickly-creating-lots-of-plots-using-ggplot-and-purrr/</link>
+      <pubDate>Sun, 24 Feb 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/post/quickly-creating-lots-of-plots-using-ggplot-and-purrr/</guid>
+      <description>Plotting and visualizing data are two of the most helpful and common activities for data analysts/scientists/whatevers. When I first started learning R, I would generate each plot individually, sometimes using a lot of copy-paste. This was fine in school, but it became much too time consuming and painful when I started working full-time.
+The difficulties I’ve encountered are often of the sort where I need to generate a bunch of similar looking plots.</description>
+    </item>
     
     <item>
       <title>Mostly Harmless Randomization Checking</title>
