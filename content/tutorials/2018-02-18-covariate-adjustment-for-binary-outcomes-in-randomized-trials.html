@@ -1,84 +1,14 @@
-<!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.54.0" />
+---
+title: Covariate Adjustment for Binary Outcomes in Randomized Trials
+author: Ryan Travis
+date: '2018-02-18'
+slug: covariate-adjustment-for-binary-outcomes-in-randomized-trials
+categories: []
+tags:
+  - rct
+  - regression
+---
 
-
-<title>Covariate Adjustment for Binary Outcomes in Randomized Trials - Fledgling Statistician</title>
-<meta property="og:title" content="Covariate Adjustment for Binary Outcomes in Randomized Trials - Fledgling Statistician">
-
-
-
-  
-
-
-
-
-
-
-
-
-<link href='//cdn.bootcss.com/highlight.js/9.11.0/styles/atom-one-dark.min.css' rel='stylesheet' type='text/css' />
-
-
-
-<link rel="stylesheet" href="/css/fonts.css" media="all">
-<link rel="stylesheet" href="/css/main.css" media="all">
-
-
-<link rel="stylesheet" href="/css/atom-one-dark-gist.css" rel="stylesheet" id="theme-stylesheet">
-<script src="/js/highlight.pack.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
-
-  </head>
-  <body>
-    <div class="wrapper">
-      <header class="header">
-        <nav class="nav">
-  <a href="/" class="nav-logo">
-    <img src="/images/%3cnil%3e"
-         width=""
-         height=""
-         alt="">
-  </a>
-
-  <ul class="nav-links">
-    
-    <li><a href="/about/">About</a></li>
-    
-    <li><a href="/post">All Posts</a></li>
-    
-    <li><a href="https://github.com/rtravis89">GitHub</a></li>
-    
-    <li><a href="https://www.linkedin.com/in/rtravis89">LinkedIn</a></li>
-    
-    <li><a href="/tutorials">Tutorials</a></li>
-    
-    <li><a href="https://twitter.com/fledglingstat">Twitter</a></li>
-    
-  </ul>
-</nav>
-
-      </header>
-
-
-<main class="content" role="main">
-
-  <article class="article">
-    
-    <span class="article-duration">8 min read</span>
-    
-
-    <h1 class="article-title">Covariate Adjustment for Binary Outcomes in Randomized Trials</h1>
-
-    
-    <span class="article-date">2018/02/18</span>
-    
-
-    <div class="article-content">
-      
 
 
 <div id="introduction" class="section level1">
@@ -93,9 +23,9 @@
 <p>For the simulation I generated 1,000 pairs X1,X2 from a multivariate normal distribution with mean vector (0,0) and variance (10, 2), covariance (3). The variables are fairly correlated with <span class="math inline">\(\rho\)</span> approximately .675. Next, I generated 1,000 bernoulli random variables with <span class="math inline">\(p = .5\)</span>. TRT = 1 represents whether the patient received the treatment variable and TRT = 0 means they received a placebo. The true data generating process is: <span class="math display">\[logit(Y) = -2 + .15*X1 + 1.5*X2 - .5*TRT\]</span></p>
 <p>Thus, we see that the true effect of the treatment is -.5 on the log odds scale, or a .61 odds ratio. Unadjusted and Adjusted estimates of TRT were obtained from the 1,000 randomly generated observations. This entire process was repeated 10,000 times so that each model was fit 10,000 times and 10,000 separate estimates were obtained for each model.</p>
 <pre class="r"><code>library(MASS)
-library(ggplot2)</code></pre>
-<pre><code>## Warning: package &#39;ggplot2&#39; was built under R version 3.4.3</code></pre>
-<pre class="r"><code>set.seed(7521)
+library(ggplot2)
+
+set.seed(7521)
 
 N &lt;- 10000
 Sigma &lt;- matrix(c(10,3,3,2),2,2)
@@ -177,7 +107,7 @@ ORD &lt;- data.frame(ORD=c(OR - adj.OR, unadj.ORD = OR - unadj.OR),
   geom_density() +
   geom_vline(xintercept = -.5, color = &quot;purple&quot;) +
   facet_wrap(~ model)</code></pre>
-<p><img src="/post/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="/tutorials/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>The plot below displays the first 1000 simulations for each model. The black lines are the point estimate plus or minus two times the standard error. The lines that are red represent intervals that do not contain the true value, while black represents intervals that do contain the true value. Notice that almost all of the red lines for the unadjusted model are to the right, indicating that the estimate is too small.</p>
 <pre class="r"><code>ggplot(estimates[c(1:1000,10001:11000),], aes(x = estimate, y = order, color = contains)) +
   geom_point() +
@@ -188,7 +118,7 @@ ORD &lt;- data.frame(ORD=c(OR - adj.OR, unadj.ORD = OR - unadj.OR),
   theme(axis.title.y=element_blank(),
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank())</code></pre>
-<p><img src="/post/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="/tutorials/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>So it seems that, at least for this simple data set up, the adjusted model is clearly superior. I don’t know how these results hold up when the covariate adjusted model is mispecified, or when dealing with more complicated settings. These are topics I’d like to dig into in the future.</p>
 </div>
 <div id="additional-comments" class="section level1">
@@ -207,53 +137,9 @@ Thank you <a href="https://twitter.com/analisereal?ref_src=twsrc%5Etfw"><span cl
   geom_density() +
   geom_vline(xintercept = 0, color = &quot;purple&quot;) +
   facet_wrap(~ model)</code></pre>
-<p><img src="/post/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="/tutorials/2018-02-18-covariate-adjustment-for-binary-outcomes-in-randomized-trials_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <pre class="r"><code>round(with(ORD,mean(ORD[model == &quot;Unadj&quot;])),3)</code></pre>
 <pre><code>## [1] -0.006</code></pre>
 <pre class="r"><code>round(with(ORD,mean(ORD[model == &quot;Adj&quot;])),3)</code></pre>
 <pre><code>## [1] -0.001</code></pre>
 </div>
-
-    </div>
-  </article>
-
-  
-
-
-</main>
-
-      <footer class="footer">
-        <ul class="footer-links">
-          <li>
-            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
-          </li>
-          <li>
-            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" width="22" height="22"></a>
-          </li>
-        </ul>
-      </footer>
-
-    </div>
-    
-
-
-
-<script src="//cdn.bootcss.com/highlight.js/9.11.0/highlight.min.js"></script>
-
-
-
-<script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/r.min.js"></script>
-<script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/yaml.min.js"></script>
-<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
-
-
-
-    
-<script src="/js/math-code.js"></script>
-<script async src="//cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-
-
-    
-  </body>
-</html>
-
