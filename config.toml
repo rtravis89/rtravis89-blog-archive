@@ -7,8 +7,11 @@ theme = "hugo-lithium-theme"
     name = "About"
     url = "/about/"
 [[menu.main]]
-    name = "Posts"
+    name = "All Posts"
     url = "/post"
+[[menu.main]]
+    name = "Tutorials"
+    url = "/tutorials"
 [[menu.main]]
     name = "GitHub"
     url = "https://github.com/rtravis89"
